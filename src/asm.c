@@ -4,15 +4,13 @@
 // Licensed under MIT License
 // Refer to LICENSE file
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include "asm.h"
 
 char *prog; // program name
 
-void printerr(char *, ...);
 char *cat_files(int argc, char *argv[]);
+int get_statements(char [], Statement []);
 
 // assembles Intel 8080 source code.
 int main(int argc, char *argv[])
@@ -24,9 +22,13 @@ int main(int argc, char *argv[])
     srcbuf = cat_files(argc-1, argv+1);
     
     // TODO: lexical analysis, syntax checking, statement collection
+    Statement statements[MAX_STMNTS];
+    int nstmnt = get_statements(srcbuf, statements);
+    free(srcbuf);
+
     // TODO: start assembly
     // TODO: output machine code
-    // TODO: free any other buffers
+    // TODO: free all open buffers and pointers
 
     return 0;
 }
