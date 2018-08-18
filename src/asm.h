@@ -12,7 +12,7 @@
 
 // argument expression definition
 typedef struct Expr {
-    uint16_t value;     // expression value (op1 and op2 are ignored)
+    char *value;        // expression value (op1 and op2 are ignored)
     char *oper;         // operator
     struct Expr *op1;   // first operand; NULL if not specified
     struct Expr *op2;   // second operand; NULL if not specified

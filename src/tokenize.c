@@ -13,6 +13,7 @@
 #define iswdchr(c) (isalnum(c) || (c) == '@' || (c) == '?')
 
 int getword(char buf[], char word[], int maxlen);
+int get_argument(char buf[], Expr *arg);
 void printerr(char *, ...);
 Instr *getinstr(char *mnem, char *arg1, char *arg2);
 char *validate_label(char *, const Statement[], int);
@@ -57,21 +58,63 @@ int get_statements(char srcbuf[], Statement statements[])
                 char *mnem = (char *) malloc(wlen+1);
                 strcpy(mnem, word);
 
-                // TODO: check arguments
-                Instr *instr;
-                if ((instr = getinstr(mnem, NULL, NULL)) == NULL) {
+                Instr *insinfo;
+                if ((insinfo = getinstr(mnem, NULL, NULL)) == NULL) {
                     // TODO: check psuedo instructions
                     printerr("error: '%s' is not a defined mnemonic", mnem);
                     exit(1);
                 }
+
                 // store instruction
                 if (statementp->instr == NULL)
                     statementp->instr = mnem;
                 else
                     (++statementp)->instr = mnem;   // new statement
+
+                // collect arguments
+                if (insinfo->nargs > 0) {
+                    int alen;
+
+                    // collect first argument
+                    Expr *arg1 = (Expr *) malloc(sizeof(Expr));
+                    srcp += alen = get_argument(srcp, arg1);
+                    if (alen == 0) {
+                        printerr("error: instruction %s takes %d arguments. "
+                            "None provided.", mnem, insinfo->nargs);
+                        exit(1);
+                    } else {
+                        statementp->arg1 = arg1;
+                        if (insinfo->nargs == 2) {
+                            // skip whitespace
+                            while (isspace(*srcp))
+                                srcp++;
+                            // collect comma
+                            if (*srcp != ',') {
+                                if (iswdchr(*srcp))
+                                    printerr("error: instruction %s takes %d "
+                                        "arguments. 1 provided.",
+                                        mnem, insinfo->nargs);
+                                else
+                                    printerr("error: unexpected token '%c'", *srcp);
+                                exit(1);
+                            } else
+                                srcp++;
+                            // collect second argument
+                            Expr *arg2 = (Expr *) malloc(sizeof(Expr));
+                            srcp += alen = get_argument(srcp, arg2);
+                            if (alen == 0) {
+                                printerr("error: instruction %s takes %d arguments. "
+                                    "1 provided.", mnem, insinfo->nargs);
+                                exit(1);
+                            } else
+                                statementp->arg2 = arg2;
+                        }
+                    }
+                }
+
                 // store and increment pc
                 statementp->pc = pc;
-                pc += instr->size;
+                pc += insinfo->size;
             }
         } else {
             // skip comments
@@ -83,7 +126,7 @@ int get_statements(char srcbuf[], Statement statements[])
                 continue;
             }
             printerr("error: unexpected token '%c'", *srcp);
-            exit(2);
+            exit(1);
         }
     }
 
@@ -103,6 +146,23 @@ int getword(char buf[], char word[], int maxlen)
     return wordp-word;
 }
 
+// get_argument: collect an instruction argument expression and return the number of
+//  characteres read from the buffer.
+int get_argument(char buf[], Expr *arg)
+{
+    char *start = buf;  // argument start point rel. to buf
+    char *end;          // argument end point rel. to buf
+
+    // skip whitespace, set start and end positions
+    while (isspace(*start))
+        start++;
+    end = start;
+
+    // TODO: collect expression string and store in arg, increment end
+
+    return end-start;
+}
+
 // validate_label: throw errors if word is not a valid label and copy at most 5
 //  characters from label into a safe place.
 char *validate_label(char *word, const Statement statements[], int nstmnt)
@@ -120,7 +180,7 @@ char *validate_label(char *word, const Statement statements[], int nstmnt)
     // TODO: check if label is pseudo-instruction
     // check if label is instruction
     if (getinstr(label, NULL, NULL) != NULL) {
-        printerr("error: label '%s' is a defined mnemonic", label);
+        printerr("error: label %s is a defined mnemonic", label);
         exit(1);
     }
 

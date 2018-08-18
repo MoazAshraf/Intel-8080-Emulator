@@ -1,4 +1,4 @@
-// test_statements.c: tests for get_statements in tokenize.c
+// test_statements.c: tests for get_statements() in tokenize.c
 //
 // Copyright (c) 2018 Moaz Ashraf
 // Licensed under MIT License
@@ -15,6 +15,8 @@ void test_statements(char *st);
 int main()
 {
     prog = "test";
+    // test_statements("LXI A, B");
+    // test_statements("NOP");
     // test_statements("LABEL: NOP LB:");
     // test_statements("LABEL: LABEL:");
     // test_statements("LABEL: LABEL");
