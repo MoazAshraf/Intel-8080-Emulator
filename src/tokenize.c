@@ -12,11 +12,13 @@
 
 #define iswdchr(c) (isalnum(c) || (c) == '@' || (c) == '?')
 
-int getword(char buf[], char word[], int maxlen);
 int get_argument(char buf[], Expr *arg);
-void printerr(char *, ...);
-Instr *getinstr(char *mnem, char *arg1, char *arg2);
+int getword(char buf[], char word[], int maxlen);
+int getoptype(char []);
 char *validate_label(char *, const Statement[], int);
+Instr *getinstr(char *mnem, char *arg1, char *arg2);
+void printerr(char *, ...);
+int strcicmp(const char *, const char *);
 
 // get_statements: collects program statements and checks for syntax errors,
 //   returns total number of collected statements.
@@ -134,6 +136,34 @@ int get_statements(char srcbuf[], Statement statements[])
         ((statementp->label || statementp->instr) ? 1 : 0);
 }
 
+// get_argument: collect an instruction argument expression and return the number of
+//  characteres read from the buffer.
+int get_argument(char buf[], Expr *exp)
+{
+    char *bufp;         // pointer in buf
+    Expr *temp;
+
+    // skip whitespace
+    while (isspace(*bufp))
+        bufp++;
+
+    // collect word
+    char word[WORD_LEN+1];
+    int wlen;
+
+    bufp += wlen = getword(bufp, word, WORD_LEN);
+    if (wlen > 0) {
+        // TODO: store type and value of first operand
+    } else {
+        if (*bufp == '(') {
+            // TODO: collect a new expression until ')'
+        }
+    }
+    // TODO: unary and binary operators, second operand.
+
+    return bufp-buf;
+}
+
 // getword: gets a word from a character buffer and returns the length of the word.
 int getword(char buf[], char word[], int maxlen)
 {
@@ -146,21 +176,68 @@ int getword(char buf[], char word[], int maxlen)
     return wordp-word;
 }
 
-// get_argument: collect an instruction argument expression and return the number of
-//  characteres read from the buffer.
-int get_argument(char buf[], Expr *arg)
+// getoptype: returns type of word as one of the OpType values
+int getoptype(char word[])
 {
-    char *start = buf;  // argument start point rel. to buf
-    char *end;          // argument end point rel. to buf
+    int wlen = strlen(word);
+    char *wordp = word;
 
-    // skip whitespace, set start and end positions
-    while (isspace(*start))
-        start++;
-    end = start;
+    if (isdigit(*wordp)) {
+        // numbers
+        char base = tolower(word[wlen-1]);
+        int islastdig = isdigit(base) ? 1 : 0;
+        if (islastdig)
+            base = 'd';
 
-    // TODO: collect expression string and store in arg, increment end
-
-    return end-start;
+        switch (base) {
+            case 'b':   // binary
+                while (wordp-word < wlen-1) {
+                    if (*wordp-'0' < 2)
+                        wordp++;
+                    else {
+                        printerr("error: binary number %s cannot contain %c",
+                            word, *wordp);
+                        exit(1);
+                    }
+                }
+                return OP_BIN;
+            case 'o': case 'q': // octal
+                while (wordp-word < wlen-1) {
+                    if (*wordp-'0' < 8)
+                        wordp++;
+                    else {
+                        printerr("error: octal number %s cannot contain %c",
+                            word, *wordp);
+                        exit(1);
+                    }
+                }
+                return OP_OCT;
+            case 'd':   // decimal
+                while (wordp-word < wlen-1+islastdig) {
+                    if (isdigit(*wordp))
+                        wordp++;
+                    else {
+                        printerr("error: decimal number %s cannot contain %c",
+                            word, *wordp);
+                        exit(1);
+                    }
+                }
+                return OP_DEC;
+            case 'h':   // hexadecimal
+                while (wordp-word < wlen-1) {
+                    if (isxdigit(*wordp))
+                        wordp++;
+                    else {
+                        printerr("error: hexadecimal number %s cannot contain %c",
+                            word, *wordp);
+                        exit(1);
+                    }
+                }
+                return OP_HEX;
+        }
+    } else {
+        // TODO: labels, instructions, operators...
+    }
 }
 
 // validate_label: throw errors if word is not a valid label and copy at most 5
@@ -186,7 +263,7 @@ char *validate_label(char *word, const Statement statements[], int nstmnt)
 
     // check for duplicate labels
     for (int i = 0; i < nstmnt; i++)
-        if (statements[i].label && strcmp(statements[i].label, label) == 0) {
+        if (statements[i].label && strcicmp(statements[i].label, label) == 0) {
             printerr("error: label '%s' is a duplicate", label);
             exit(1);
         }
@@ -206,15 +283,30 @@ Instr *getinstr(char *mnem, char *arg1, char *arg2)
 {
     Instr *instrp = instrs;
     while (instrp - instrs < 0x100 && instrp->mnem) {
-        if (strcmp(mnem, instrp->mnem) == 0)
+        if (strcicmp(mnem, instrp->mnem) == 0)
             if (arg1 == NULL)
                 return instrp;
-            else if (strcmp(arg1, instrp->arg1) == 0)
+            else if (strcicmp(arg1, instrp->arg1) == 0)
                 if (arg2 == NULL)
                     return instrp;
-                else if (strcmp(arg2, instrp->arg2) == 0)
+                else if (strcicmp(arg2, instrp->arg2) == 0)
                     return instrp;
         instrp++;
     }
     return NULL;
+}
+
+// strcicmp: case insensitive string comparison
+int strcicmp(const char *s, const char *t)
+{
+    for ( ; *s && *t; s++, t++) {
+        int d = tolower(*s) - tolower(*t);
+        if (d != 0)
+            return d;
+    }
+    if (!*s && !*t)
+        return 0;
+    if (*t)
+        return -1;
+    return 1;
 }

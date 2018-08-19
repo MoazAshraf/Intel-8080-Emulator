@@ -10,16 +10,23 @@
 
 char *prog;
 
+int getoptype(char *);
 void test_argument(char *);
 
 int main()
 {
     prog = "test";
 
-    test_argument("5");
-    test_argument("5 + 3");
-    test_argument(" 5 * 5 - 2 ");
-    test_argument(" 2 + 8 / 5 ");
+    printf("%d\n", getoptype("10F1H"));
+    printf("%d\n", getoptype("342"));
+    printf("%d\n", getoptype("349D"));
+    printf("%d\n", getoptype("173O"));
+    printf("%d\n", getoptype("173Q"));
+    printf("%d\n", getoptype("01010B"));
+    // test_argument("5");
+    // test_argument("5 + 3");
+    // test_argument(" 5 * 5 - 2 ");
+    // test_argument(" 2 + 8 / 5 ");
 }
 
 int get_argument(char buf[], Expr *arg);

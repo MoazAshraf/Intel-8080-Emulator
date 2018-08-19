@@ -10,12 +10,18 @@
 #include <stddef.h>
 #include <stdint.h>
 
+// argument operand type
+typedef enum OpType {
+    OP_HEX, OP_DEC, OP_OCT, OP_BIN, OP_PC, OP_ASCII, OP_LABEL, OP_EXPR
+} OpType;
+
 // argument expression definition
 typedef struct Expr {
-    char *value;        // expression value (op1 and op2 are ignored)
+    OpType type;        // expression type
+    char *value;        // expression value
     char *oper;         // operator
-    struct Expr *op1;   // first operand; NULL if not specified
-    struct Expr *op2;   // second operand; NULL if not specified
+    struct Expr *op1;   // first operand
+    struct Expr *op2;   // second operand
 } Expr;
 
 // program statement definition
