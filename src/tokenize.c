@@ -12,11 +12,13 @@
 
 #define iswdchr(c) (isalnum(c) || (c) == '@' || (c) == '?')
 
-int get_argument(char buf[], Expr *arg);
-int getword(char buf[], char word[], int maxlen);
-int getoptype(char []);
+int get_argument(char *, Expr *);
+int getword(char *, char *, int);
+int gettoktype(char *);
 char *validate_label(char *, const Statement[], int);
-Instr *getinstr(char *mnem, char *arg1, char *arg2);
+Instr *getinstr(char *, char *, char *);
+Oper *getunaoper(char *);
+Oper *getbinoper(char *);
 void printerr(char *, ...);
 int strcicmp(const char *, const char *);
 
@@ -118,15 +120,14 @@ int get_statements(char srcbuf[], Statement statements[])
                 statementp->pc = pc;
                 pc += insinfo->size;
             }
-        } else {
+        } else if (*srcp == ';') {
             // skip comments
-            if (*srcp == ';') {
-                while (*srcp != '\n' && *srcp != '\0')
-                    srcp++;
-                if (*srcp == '\n')
-                    srcp++;
-                continue;
-            }
+            while (*srcp != '\n' && *srcp != '\0')
+                srcp++;
+            if (*srcp == '\n')
+                srcp++;
+            continue;
+        } else if (*srcp != '\0') {
             printerr("error: unexpected token '%c'", *srcp);
             exit(1);
         }
@@ -141,7 +142,6 @@ int get_statements(char srcbuf[], Statement statements[])
 int get_argument(char buf[], Expr *exp)
 {
     char *bufp;         // pointer in buf
-    Expr *temp;
 
     // skip whitespace
     while (isspace(*bufp))
@@ -176,8 +176,8 @@ int getword(char buf[], char word[], int maxlen)
     return wordp-word;
 }
 
-// getoptype: returns type of word as one of the OpType values
-int getoptype(char word[])
+// gettoktype: returns type of word as one of the TokType values
+int gettoktype(char word[])
 {
     int wlen = strlen(word);
     char *wordp = word;
@@ -200,7 +200,7 @@ int getoptype(char word[])
                         exit(1);
                     }
                 }
-                return OP_BIN;
+                return TOK_BIN;
             case 'o': case 'q': // octal
                 while (wordp-word < wlen-1) {
                     if (*wordp-'0' < 8)
@@ -211,7 +211,7 @@ int getoptype(char word[])
                         exit(1);
                     }
                 }
-                return OP_OCT;
+                return TOK_OCT;
             case 'd':   // decimal
                 while (wordp-word < wlen-1+islastdig) {
                     if (isdigit(*wordp))
@@ -222,7 +222,7 @@ int getoptype(char word[])
                         exit(1);
                     }
                 }
-                return OP_DEC;
+                return TOK_DEC;
             case 'h':   // hexadecimal
                 while (wordp-word < wlen-1) {
                     if (isxdigit(*wordp))
@@ -233,11 +233,17 @@ int getoptype(char word[])
                         exit(1);
                     }
                 }
-                return OP_HEX;
+                return TOK_HEX;
         }
-    } else {
-        // TODO: labels, instructions, operators...
-    }
+    } else if (getinstr(word, NULL, NULL))  // instruction
+        return TOK_INSTR;
+    // TODO: pseudo-instructions
+    else if (getunaoper(word))              // unary operator
+        return TOK_UNAOPER;
+    else if (getbinoper(word))              // binary operator
+        return TOK_BINOPER;
+    else                                    // label
+        return TOK_LABEL;
 }
 
 // validate_label: throw errors if word is not a valid label and copy at most 5
@@ -292,6 +298,36 @@ Instr *getinstr(char *mnem, char *arg1, char *arg2)
                 else if (strcicmp(arg2, instrp->arg2) == 0)
                     return instrp;
         instrp++;
+    }
+    return NULL;
+}
+
+extern Oper unaopers[];
+extern const int N_UNAOPERS;
+
+// getunaoper: returns the unary operator definition with matching string
+Oper *getunaoper(char *s)
+{
+    Oper *operp = unaopers;
+    while (operp - unaopers < N_UNAOPERS) {
+        if (strcicmp(s, operp->str) == 0)
+            return operp;
+        operp++;
+    }
+    return NULL;
+}
+
+extern Oper binopers[];
+extern const int N_BINOPERS;
+
+// getbinoper: returns the binary operator definition with matching string
+Oper *getbinoper(char *s)
+{
+    Oper *operp = binopers;
+    while (operp - binopers < N_BINOPERS) {
+        if (strcicmp(s, operp->str) == 0)
+            return operp;
+        operp++;
     }
     return NULL;
 }

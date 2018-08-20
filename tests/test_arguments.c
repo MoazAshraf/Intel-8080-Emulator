@@ -10,19 +10,24 @@
 
 char *prog;
 
-int getoptype(char *);
+int gettoktype(char *);
 void test_argument(char *);
 
 int main()
 {
     prog = "test";
 
-    printf("%d\n", getoptype("10F1H"));
-    printf("%d\n", getoptype("342"));
-    printf("%d\n", getoptype("349D"));
-    printf("%d\n", getoptype("173O"));
-    printf("%d\n", getoptype("173Q"));
-    printf("%d\n", getoptype("01010B"));
+    printf("%d\n", gettoktype("10F1H"));
+    printf("%d\n", gettoktype("342"));
+    printf("%d\n", gettoktype("349D"));
+    printf("%d\n", gettoktype("173O"));
+    printf("%d\n", gettoktype("173Q"));
+    printf("%d\n", gettoktype("01010B"));
+    printf("%d\n", gettoktype("and"));
+    printf("%d\n", gettoktype("or"));
+    printf("%d\n", gettoktype("NOT"));
+    printf("%d\n", gettoktype("LABEL"));
+    printf("%d\n", gettoktype("NOP"));
     // test_argument("5");
     // test_argument("5 + 3");
     // test_argument(" 5 * 5 - 2 ");
