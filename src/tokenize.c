@@ -12,13 +12,13 @@
 
 #define iswdchr(c) (isalnum(c) || (c) == '@' || (c) == '?')
 
-int get_argument(char *, Expr *);
+int get_argument(char *, Token *);
+int get_token(char *, Token *);
 int getword(char *, char *, int);
-int gettoktype(char *);
+Instr *get_instr(char *, char *, char *);
+Oper *get_unaoper(char *);
+Oper *get_binoper(char *);
 char *validate_label(char *, const Statement[], int);
-Instr *getinstr(char *, char *, char *);
-Oper *getunaoper(char *);
-Oper *getbinoper(char *);
 void printerr(char *, ...);
 int strcicmp(const char *, const char *);
 
@@ -38,9 +38,9 @@ int get_statements(char srcbuf[], Statement statements[])
             srcp++;
 
         // collect a word
-        char word[WORD_LEN+1];
+        char word[MAX_WORD+1];
         int wlen;
-        srcp += wlen = getword(srcp, word, WORD_LEN);
+        srcp += wlen = getword(srcp, word, MAX_WORD);
 
         if (wlen > 0) {
             if (*srcp == ':') {
@@ -63,7 +63,7 @@ int get_statements(char srcbuf[], Statement statements[])
                 strcpy(mnem, word);
 
                 Instr *insinfo;
-                if ((insinfo = getinstr(mnem, NULL, NULL)) == NULL) {
+                if ((insinfo = get_instr(mnem, NULL, NULL)) == NULL) {
                     // TODO: check psuedo instructions
                     printerr("error: '%s' is not a defined mnemonic", mnem);
                     exit(1);
@@ -80,7 +80,7 @@ int get_statements(char srcbuf[], Statement statements[])
                     int alen;
 
                     // collect first argument
-                    Expr *arg1 = (Expr *) malloc(sizeof(Expr));
+                    Token *arg1;
                     srcp += alen = get_argument(srcp, arg1);
                     if (alen == 0) {
                         printerr("error: instruction %s takes %d arguments. "
@@ -89,9 +89,6 @@ int get_statements(char srcbuf[], Statement statements[])
                     } else {
                         statementp->arg1 = arg1;
                         if (insinfo->nargs == 2) {
-                            // skip whitespace
-                            while (isspace(*srcp))
-                                srcp++;
                             // collect comma
                             if (*srcp != ',') {
                                 if (iswdchr(*srcp))
@@ -104,7 +101,7 @@ int get_statements(char srcbuf[], Statement statements[])
                             } else
                                 srcp++;
                             // collect second argument
-                            Expr *arg2 = (Expr *) malloc(sizeof(Expr));
+                            Token *arg2;
                             srcp += alen = get_argument(srcp, arg2);
                             if (alen == 0) {
                                 printerr("error: instruction %s takes %d arguments. "
@@ -137,34 +134,164 @@ int get_statements(char srcbuf[], Statement statements[])
         ((statementp->label || statementp->instr) ? 1 : 0);
 }
 
-// get_argument: collect an instruction argument expression and return the number of
-//  characteres read from the buffer.
-int get_argument(char buf[], Expr *exp)
+// get_argument: collects an argument expression, returns #characters read.
+int get_argument(char buf[], Token *arg)
 {
-    char *bufp;         // pointer in buf
+    // TODO: allocate memory for arg
+    // TODO: collect tokens in arg
+    // TODO: unary and binary + and - type check
+    // TODO: syntax check
+    // TODO: return #characters read
+}
+
+// get_token: collects an argument expression token, returns #characters read.
+int get_token(char buf[], Token *tok)
+{
+    char *bufp; // pointer in buf
+    char word[MAX_WORD+1];
+    char *wordp;
+    int wlen;
+
+    bufp = buf;
 
     // skip whitespace
     while (isspace(*bufp))
         bufp++;
+    // skip comments
+    while (*bufp == ';') {
+        while (*bufp != '\n' && *bufp != '\0')
+            bufp++;
+        if (*bufp == '\n')
+            bufp++;
+        // skip whitespace
+        while (isspace(*bufp))
+        bufp++;
+    }
 
-    // collect word
-    char word[WORD_LEN+1];
-    int wlen;
+    tok->type = -1;
 
-    bufp += wlen = getword(bufp, word, WORD_LEN);
-    if (wlen > 0) {
-        // TODO: store type and value of first operand
-    } else {
-        if (*bufp == '(') {
-            // TODO: collect a new expression until ')'
+    // collect a word
+    bufp += wlen = getword(bufp, word, MAX_WORD);
+    wordp = word;
+
+    if (wlen > 0) { // if word collected
+        if (isdigit(*wordp)) {
+            // numbers
+            char base = tolower(word[wlen-1]);
+            int islastdig = isdigit(base) ? 1 : 0;
+            if (islastdig)
+                base = 'd';
+
+            switch (base) {
+                case 'b':   // binary
+                    while (wordp-word < wlen-1) {
+                        if (*wordp-'0' < 2)
+                            wordp++;
+                        else {
+                            printerr("error: binary number %s cannot contain %c",
+                                word, *wordp);
+                            exit(1);
+                        }
+                    }
+                    tok->type = TOK_BIN;
+                    break;
+                case 'o': case 'q': // octal
+                    while (wordp-word < wlen-1) {
+                        if (*wordp-'0' < 8)
+                            wordp++;
+                        else {
+                            printerr("error: octal number %s cannot contain %c",
+                                word, *wordp);
+                            exit(1);
+                        }
+                    }
+                    tok->type = TOK_OCT;
+                    break;
+                case 'd':   // decimal
+                    while (wordp-word < wlen-1+islastdig) {
+                        if (isdigit(*wordp))
+                            wordp++;
+                        else {
+                            printerr("error: decimal number %s cannot contain %c",
+                                word, *wordp);
+                            exit(1);
+                        }
+                    }
+                    tok->type = TOK_DEC;
+                    break;
+                case 'h':   // hexadecimal
+                    while (wordp-word < wlen-1) {
+                        if (isxdigit(*wordp))
+                            wordp++;
+                        else {
+                            printerr("error: hexadecimal number %s cannot "
+                                "contain %c", word, *wordp);
+                            exit(1);
+                        }
+                    }
+                    tok->type = TOK_HEX;
+                    break;
+                default:
+                    printerr("error: illegal token %s", word);
+                    exit(1);
+            }
+        } else if (get_instr(word, NULL, NULL)) // instruction
+            tok->type = TOK_INSTR;
+        // TODO: pseudo-instructions
+        else if (get_binoper(word))             // binary operator
+            tok->type = TOK_BINOPER;
+        else if (get_unaoper(word))             // unary operator
+            tok->type = TOK_UNAOPER;
+        else                                    // label
+            tok->type = TOK_LABEL;
+    } else if (*bufp) {    // non-word character
+        *wordp++ = *bufp++;
+        *wordp = '\0';
+
+        if (*word == '(' || *word == ')')       // parentheses
+            tok->type = TOK_PAREN;
+        else if (*word == '$')                  // program counter
+            tok->type = TOK_PC;
+        else if (get_binoper(word))             // binary operator
+            tok->type = TOK_BINOPER;
+        else if (get_unaoper(word))             // unary operator
+            tok->type = TOK_UNAOPER;
+        else if (*word == '\'') {               // ascii constant
+            wordp = word;
+            while (*bufp && *bufp != '\'')
+                *wordp++ = *bufp++;
+            if (*bufp == '\'')
+                bufp++;
+            else {
+                printerr("error: missing ASCII delimiter");
+                exit(1);
+            }
+            tok->type = TOK_ASCII;
+        }
+        else if (*word == ',') {
+            bufp--;
+            *word = '\0';
+            tok->type = -1;
+        } else if (!*word) {
+            *word = '\0';
+            tok->type = -1;
+        } else {
+            printerr("error: illegal token %s", word);
+            exit(1);
         }
     }
-    // TODO: unary and binary operators, second operand.
+
+    // copy token string
+    wlen = strlen(word);
+    if (wlen > 0) {
+        tok->str = (char *) malloc(wlen+1);
+        strcpy(tok->str, word);
+    }
 
     return bufp-buf;
 }
 
-// getword: gets a word from a character buffer and returns the length of the word.
+// getword: gets a word from a character buffer, returns the length of the word.
 int getword(char buf[], char word[], int maxlen)
 {
     char *bufp = buf;   // pointer in buf
@@ -176,82 +303,12 @@ int getword(char buf[], char word[], int maxlen)
     return wordp-word;
 }
 
-// gettoktype: returns type of word as one of the TokType values
-int gettoktype(char word[])
-{
-    int wlen = strlen(word);
-    char *wordp = word;
-
-    if (isdigit(*wordp)) {
-        // numbers
-        char base = tolower(word[wlen-1]);
-        int islastdig = isdigit(base) ? 1 : 0;
-        if (islastdig)
-            base = 'd';
-
-        switch (base) {
-            case 'b':   // binary
-                while (wordp-word < wlen-1) {
-                    if (*wordp-'0' < 2)
-                        wordp++;
-                    else {
-                        printerr("error: binary number %s cannot contain %c",
-                            word, *wordp);
-                        exit(1);
-                    }
-                }
-                return TOK_BIN;
-            case 'o': case 'q': // octal
-                while (wordp-word < wlen-1) {
-                    if (*wordp-'0' < 8)
-                        wordp++;
-                    else {
-                        printerr("error: octal number %s cannot contain %c",
-                            word, *wordp);
-                        exit(1);
-                    }
-                }
-                return TOK_OCT;
-            case 'd':   // decimal
-                while (wordp-word < wlen-1+islastdig) {
-                    if (isdigit(*wordp))
-                        wordp++;
-                    else {
-                        printerr("error: decimal number %s cannot contain %c",
-                            word, *wordp);
-                        exit(1);
-                    }
-                }
-                return TOK_DEC;
-            case 'h':   // hexadecimal
-                while (wordp-word < wlen-1) {
-                    if (isxdigit(*wordp))
-                        wordp++;
-                    else {
-                        printerr("error: hexadecimal number %s cannot contain %c",
-                            word, *wordp);
-                        exit(1);
-                    }
-                }
-                return TOK_HEX;
-        }
-    } else if (getinstr(word, NULL, NULL))  // instruction
-        return TOK_INSTR;
-    // TODO: pseudo-instructions
-    else if (getunaoper(word))              // unary operator
-        return TOK_UNAOPER;
-    else if (getbinoper(word))              // binary operator
-        return TOK_BINOPER;
-    else                                    // label
-        return TOK_LABEL;
-}
-
 // validate_label: throw errors if word is not a valid label and copy at most 5
 //  characters from label into a safe place.
 char *validate_label(char *word, const Statement statements[], int nstmnt)
 {
-    char *label = (char *) malloc(LABEL_LEN+1);
-    strncpy(label, word, LABEL_LEN);
+    char *label = (char *) malloc(MAX_LABEL+1);
+    strncpy(label, word, MAX_LABEL);
 
     // validate the label
     if (isdigit(label[0])) {
@@ -262,7 +319,7 @@ char *validate_label(char *word, const Statement statements[], int nstmnt)
 
     // TODO: check if label is pseudo-instruction
     // check if label is instruction
-    if (getinstr(label, NULL, NULL) != NULL) {
+    if (get_instr(label, NULL, NULL) != NULL) {
         printerr("error: label %s is a defined mnemonic", label);
         exit(1);
     }
@@ -275,7 +332,7 @@ char *validate_label(char *word, const Statement statements[], int nstmnt)
         }
 
     // give warning about short label
-    if (strlen(word) > LABEL_LEN)
+    if (strlen(word) > MAX_LABEL)
         printerr("warning: the label '%s' is too long; "
             "using '%s' instead", word, label);
     return label;
@@ -283,9 +340,9 @@ char *validate_label(char *word, const Statement statements[], int nstmnt)
 
 extern Instr instrs[];
 
-// getinstr: returns the first instruction definition with the matching criteria
+// get_instr: returns the first instruction definition with the matching criteria
 //  or NULL if it doesn't exist.
-Instr *getinstr(char *mnem, char *arg1, char *arg2)
+Instr *get_instr(char *mnem, char *arg1, char *arg2)
 {
     Instr *instrp = instrs;
     while (instrp - instrs < 0x100 && instrp->mnem) {
@@ -305,8 +362,8 @@ Instr *getinstr(char *mnem, char *arg1, char *arg2)
 extern Oper unaopers[];
 extern const int N_UNAOPERS;
 
-// getunaoper: returns the unary operator definition with matching string
-Oper *getunaoper(char *s)
+// get_unaoper: returns the unary operator definition with matching string
+Oper *get_unaoper(char *s)
 {
     Oper *operp = unaopers;
     while (operp - unaopers < N_UNAOPERS) {
@@ -320,8 +377,8 @@ Oper *getunaoper(char *s)
 extern Oper binopers[];
 extern const int N_BINOPERS;
 
-// getbinoper: returns the binary operator definition with matching string
-Oper *getbinoper(char *s)
+// get_binoper: returns the binary operator definition with matching string
+Oper *get_binoper(char *s)
 {
     Oper *operp = binopers;
     while (operp - binopers < N_BINOPERS) {

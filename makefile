@@ -8,6 +8,7 @@ RM = rm
 
 all: clean $(DIST)/asm tests
 
+
 $(DIST)/asm: $(SRC)/asm.c $(SRC)/errors.o $(SRC)/loadfiles.o \
             $(SRC)/tokenize.o $(SRC)/mnemonics.o
 	$(CC) -o $(DIST)/asm $(SRC)/asm.c $(SRC)/errors.o $(SRC)/loadfiles.o \
@@ -26,17 +27,17 @@ $(SRC)/mnemonics.o: $(SRC)/mnemonics.c
 	$(CC) -o $(SRC)/mnemonics.o -c $(SRC)/mnemonics.c
 
 
-tests: $(TESTS_OUT)/test_statements $(TESTS_OUT)/test_arguments
+tests: $(TESTS_OUT)/test_stm $(TESTS_OUT)/test_arg
 
-$(TESTS_OUT)/test_statements: $(TESTS)/test_statements.c $(SRC)/errors.o \
-							  $(SRC)/tokenize.o $(SRC)/mnemonics.o
-	$(CC) -o $(TESTS_OUT)/test_statements $(SRC)/errors.o $(SRC)/tokenize.o \
-	        $(SRC)/mnemonics.o $(TESTS)/test_statements.c
+$(TESTS_OUT)/test_stm: $(TESTS)/test_stm.c $(SRC)/errors.o $(SRC)/tokenize.o \
+					   $(SRC)/mnemonics.o
+	$(CC) -o $(TESTS_OUT)/test_stm $(SRC)/errors.o $(SRC)/tokenize.o \
+	        $(SRC)/mnemonics.o $(TESTS)/test_stm.c
 
-$(TESTS_OUT)/test_arguments: $(TESTS)/test_arguments.c $(SRC)/errors.o \
-							  $(SRC)/tokenize.o $(SRC)/mnemonics.o
-	$(CC) -o $(TESTS_OUT)/test_arguments $(SRC)/errors.o $(SRC)/tokenize.o \
-	        $(SRC)/mnemonics.o $(TESTS)/test_arguments.c
+$(TESTS_OUT)/test_arg: $(TESTS)/test_arg.c $(SRC)/errors.o $(SRC)/tokenize.o \
+					   $(SRC)/mnemonics.o
+	$(CC) -o $(TESTS_OUT)/test_arg $(SRC)/errors.o $(SRC)/tokenize.o \
+	        $(SRC)/mnemonics.o $(TESTS)/test_arg.c
 
 clean:
 	$(RM) -rf $(DIST)/*

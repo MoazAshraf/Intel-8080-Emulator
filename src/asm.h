@@ -22,22 +22,13 @@ typedef struct Token {
     char *str;      // token string
 } Token;
 
-// argument expression definition
-typedef struct Expr {
-    TokType type;       // expression type
-    char *value;        // expression value
-    char *oper;         // operator
-    struct Expr *op1;   // first operand
-    struct Expr *op2;   // second operand
-} Expr;
-
 // program statement definition
 typedef struct Statement {
-    uint16_t pc;     // program counter value
-    char *label;    // label field; NULL if not specified
-    char *instr;    // instruction field; NULL if not specified
-    Expr *arg1;     // first argument field; NULL if not specified
-    Expr *arg2;     // second argument field; NULL if not specified
+    uint16_t pc;    // program counter value
+    char *label;    // label
+    char *instr;    // instruction or pseudo-instruction
+    Token *arg1;    // first argument expression
+    Token *arg2;    // second argument expression
 } Statement;
 
 // instruction definition
@@ -57,7 +48,7 @@ typedef struct Oper {
 } Oper;
 
 #define MAX_STMNTS  0x20000 // maximum number of program statements
-#define WORD_LEN    256     // maximum length of a word
-#define LABEL_LEN   5       // maximum label length
+#define MAX_WORD    256     // maximum length of a word
+#define MAX_LABEL   5       // maximum label length
 
 #endif  // ASM_H

@@ -1,4 +1,4 @@
-// test_statements.c: tests for get_statements() in tokenize.c
+// test_stm.c: tests for get_statements() in tokenize.c
 //
 // Copyright (c) 2018 Moaz Ashraf
 // Licensed under MIT License
@@ -33,8 +33,7 @@ int get_statements(char [], Statement []);
 
 void test_statements(char *st)
 {
-    Statement *statements = (Statement *) calloc(MAX_STMNTS,
-        sizeof(Statement));
+    Statement *statements = (Statement *) calloc(MAX_STMNTS, sizeof(Statement));
 
     int nstmnt = get_statements(st, statements);
 
