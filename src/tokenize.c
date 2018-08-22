@@ -5,14 +5,13 @@
 // Licensed under MIT License
 // Refer to LICENSE file
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include "asm.h"
 
-#define iswdchr(c) (isalnum(c) || (c) == '@' || (c) == '?')
-
-int get_argument(char *, Token *);
+int get_argument(char *, Token **, int *);
 int get_token(char *, Token *);
 int getword(char *, char *, int);
 Instr *get_instr(char *, char *, char *);
@@ -66,7 +65,7 @@ int get_statements(char srcbuf[], Statement statements[])
                 if ((insinfo = get_instr(mnem, NULL, NULL)) == NULL) {
                     // TODO: check psuedo instructions
                     printerr("error: '%s' is not a defined mnemonic", mnem);
-                    exit(1);
+                    exit(EXIT_FAILURE);
                 }
 
                 // store instruction
@@ -77,15 +76,16 @@ int get_statements(char srcbuf[], Statement statements[])
 
                 // collect arguments
                 if (insinfo->nargs > 0) {
-                    int alen;
+                    int nread;  // #characters read from buffer
 
                     // collect first argument
                     Token *arg1;
-                    srcp += alen = get_argument(srcp, arg1);
-                    if (alen == 0) {
+                    int ntok1;  // #tokens in the first argument
+                    srcp += nread = get_argument(srcp, &arg1, &ntok1);
+                    if (nread == 0) {
                         printerr("error: instruction %s takes %d arguments. "
                             "None provided.", mnem, insinfo->nargs);
-                        exit(1);
+                        exit(EXIT_FAILURE);
                     } else {
                         statementp->arg1 = arg1;
                         if (insinfo->nargs == 2) {
@@ -97,16 +97,18 @@ int get_statements(char srcbuf[], Statement statements[])
                                         mnem, insinfo->nargs);
                                 else
                                     printerr("error: unexpected token '%c'", *srcp);
-                                exit(1);
+                                exit(EXIT_FAILURE);
                             } else
                                 srcp++;
+
                             // collect second argument
                             Token *arg2;
-                            srcp += alen = get_argument(srcp, arg2);
-                            if (alen == 0) {
+                            int ntok2;  // #tokens in the second argument
+                            srcp += nread = get_argument(srcp, &arg2, &ntok2);
+                            if (nread == 0) {
                                 printerr("error: instruction %s takes %d arguments. "
                                     "1 provided.", mnem, insinfo->nargs);
-                                exit(1);
+                                exit(EXIT_FAILURE);
                             } else
                                 statementp->arg2 = arg2;
                         }
@@ -126,7 +128,7 @@ int get_statements(char srcbuf[], Statement statements[])
             continue;
         } else if (*srcp != '\0') {
             printerr("error: unexpected token '%c'", *srcp);
-            exit(1);
+            exit(EXIT_FAILURE);
         }
     }
 
@@ -135,13 +137,46 @@ int get_statements(char srcbuf[], Statement statements[])
 }
 
 // get_argument: collects an argument expression, returns #characters read.
-int get_argument(char buf[], Token *arg)
+int get_argument(char buf[], Token **arg, int *ntoks)
 {
-    // TODO: allocate memory for arg
-    // TODO: collect tokens in arg
-    // TODO: unary and binary + and - type check
-    // TODO: syntax check
-    // TODO: return #characters read
+    char *bufp;             // pointer in buf
+    int nread;              // number of characters read from buffer
+    Token toks[MAX_TOKENS]; // temporary token storage
+    Token *tokp;            // pointer in toks
+    Token *argp;            // pointer in *arg
+
+    // collect tokens in toks
+    for (bufp = buf, tokp = toks, *ntoks = 0; (nread = get_token(bufp, tokp)) > 0
+     && tokp->type != -1; tokp++, bufp += nread, (*ntoks)++) { 
+        // unary and binary + and - type check
+        if (*tokp->str == '+' || *tokp->str == '-') {
+            if (*ntoks > 0 && (isoperand((tokp-1)->type) || *(tokp-1)->str == ')'))
+                tokp->type = TOK_BINOPER;
+            else
+                tokp->type = TOK_UNAOPER;
+        }
+
+        // syntax check
+        if (tokp->type == TOK_BINOPER && (*ntoks == 0
+         || !isoperand((tokp-1)->type) && *(tokp-1)->str != ')')) {
+            printerr("error: expected operand before %s", tokp->str);
+            exit(EXIT_FAILURE);
+        } else if (isoperand(tokp->type) && *ntoks > 0
+         && (isoperand((tokp-1)->type) || (tokp-1)->type == TOK_INSTR)) {
+            printerr("error: expected operator after %s", (tokp-1)->str);
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    // store argument tokens
+    *arg = (Token *) malloc(*ntoks * sizeof(Token));
+    for (tokp = toks, argp = *arg; tokp-toks < *ntoks; tokp++, argp++) {
+        argp->str = tokp->str;
+        argp->type = tokp->type;
+    }
+
+    // return #characters read
+    return bufp-buf;
 }
 
 // get_token: collects an argument expression token, returns #characters read.
@@ -165,7 +200,7 @@ int get_token(char buf[], Token *tok)
             bufp++;
         // skip whitespace
         while (isspace(*bufp))
-        bufp++;
+            bufp++;
     }
 
     tok->type = -1;
@@ -181,59 +216,61 @@ int get_token(char buf[], Token *tok)
             int islastdig = isdigit(base) ? 1 : 0;
             if (islastdig)
                 base = 'd';
+            else
+                word[--wlen] = '\0';
 
             switch (base) {
                 case 'b':   // binary
-                    while (wordp-word < wlen-1) {
+                    while (wordp-word < wlen) {
                         if (*wordp-'0' < 2)
                             wordp++;
                         else {
                             printerr("error: binary number %s cannot contain %c",
                                 word, *wordp);
-                            exit(1);
+                            exit(EXIT_FAILURE);
                         }
                     }
                     tok->type = TOK_BIN;
                     break;
                 case 'o': case 'q': // octal
-                    while (wordp-word < wlen-1) {
+                    while (wordp-word < wlen) {
                         if (*wordp-'0' < 8)
                             wordp++;
                         else {
                             printerr("error: octal number %s cannot contain %c",
                                 word, *wordp);
-                            exit(1);
+                            exit(EXIT_FAILURE);
                         }
                     }
                     tok->type = TOK_OCT;
                     break;
                 case 'd':   // decimal
-                    while (wordp-word < wlen-1+islastdig) {
+                    while (wordp-word < wlen) {
                         if (isdigit(*wordp))
                             wordp++;
                         else {
                             printerr("error: decimal number %s cannot contain %c",
                                 word, *wordp);
-                            exit(1);
+                            exit(EXIT_FAILURE);
                         }
                     }
                     tok->type = TOK_DEC;
                     break;
                 case 'h':   // hexadecimal
-                    while (wordp-word < wlen-1) {
+                    while (wordp-word < wlen) {
                         if (isxdigit(*wordp))
                             wordp++;
                         else {
                             printerr("error: hexadecimal number %s cannot "
                                 "contain %c", word, *wordp);
-                            exit(1);
+                            exit(EXIT_FAILURE);
                         }
                     }
                     tok->type = TOK_HEX;
                     break;
                 default:
                     printerr("error: illegal token %s", word);
-                    exit(1);
+                    exit(EXIT_FAILURE);
             }
         } else if (get_instr(word, NULL, NULL)) // instruction
             tok->type = TOK_INSTR;
@@ -260,24 +297,18 @@ int get_token(char buf[], Token *tok)
             wordp = word;
             while (*bufp && *bufp != '\'')
                 *wordp++ = *bufp++;
+            *wordp = '\0';
             if (*bufp == '\'')
                 bufp++;
             else {
                 printerr("error: missing ASCII delimiter");
-                exit(1);
+                exit(EXIT_FAILURE);
             }
             tok->type = TOK_ASCII;
-        }
-        else if (*word == ',') {
+        } else if (*word) {
             bufp--;
             *word = '\0';
             tok->type = -1;
-        } else if (!*word) {
-            *word = '\0';
-            tok->type = -1;
-        } else {
-            printerr("error: illegal token %s", word);
-            exit(1);
         }
     }
 
@@ -314,21 +345,21 @@ char *validate_label(char *word, const Statement statements[], int nstmnt)
     if (isdigit(label[0])) {
         printerr("error: the first character in label '%s' cannot "
             "be a digit", label);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     // TODO: check if label is pseudo-instruction
     // check if label is instruction
     if (get_instr(label, NULL, NULL) != NULL) {
         printerr("error: label %s is a defined mnemonic", label);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     // check for duplicate labels
     for (int i = 0; i < nstmnt; i++)
         if (statements[i].label && strcicmp(statements[i].label, label) == 0) {
             printerr("error: label '%s' is a duplicate", label);
-            exit(1);
+            exit(EXIT_FAILURE);
         }
 
     // give warning about short label

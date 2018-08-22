@@ -50,5 +50,18 @@ typedef struct Oper {
 #define MAX_STMNTS  0x20000 // maximum number of program statements
 #define MAX_WORD    256     // maximum length of a word
 #define MAX_LABEL   5       // maximum label length
+#define MAX_TOKENS  256     // maximum number of argument expression tokens
+
+// is c a word character?
+#define iswdchr(c)      (isalnum(c) || (c) == '@' || (c) == '?')
+
+// is t an operand token type?
+#define isoperand(t)    ((t) == TOK_HEX         \
+                         || (t) == TOK_DEC      \
+                         || (t) == TOK_OCT      \
+                         || (t) == TOK_BIN      \
+                         || (t) == TOK_PC       \
+                         || (t) == TOK_ASCII    \
+                         || (t) == TOK_LABEL)
 
 #endif  // ASM_H

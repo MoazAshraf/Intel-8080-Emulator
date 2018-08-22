@@ -27,7 +27,7 @@ $(SRC)/mnemonics.o: $(SRC)/mnemonics.c
 	$(CC) -o $(SRC)/mnemonics.o -c $(SRC)/mnemonics.c
 
 
-tests: $(TESTS_OUT)/test_stm $(TESTS_OUT)/test_arg
+tests: $(TESTS_OUT)/test_stm $(TESTS_OUT)/test_arg $(TESTS_OUT)/test_tok
 
 $(TESTS_OUT)/test_stm: $(TESTS)/test_stm.c $(SRC)/errors.o $(SRC)/tokenize.o \
 					   $(SRC)/mnemonics.o
@@ -38,6 +38,11 @@ $(TESTS_OUT)/test_arg: $(TESTS)/test_arg.c $(SRC)/errors.o $(SRC)/tokenize.o \
 					   $(SRC)/mnemonics.o
 	$(CC) -o $(TESTS_OUT)/test_arg $(SRC)/errors.o $(SRC)/tokenize.o \
 	        $(SRC)/mnemonics.o $(TESTS)/test_arg.c
+
+$(TESTS_OUT)/test_tok: $(TESTS)/test_tok.c $(SRC)/errors.o $(SRC)/tokenize.o \
+					   $(SRC)/mnemonics.o
+	$(CC) -o $(TESTS_OUT)/test_tok $(SRC)/errors.o $(SRC)/tokenize.o \
+	        $(SRC)/mnemonics.o $(TESTS)/test_tok.c
 
 clean:
 	$(RM) -rf $(DIST)/*

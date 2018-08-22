@@ -33,7 +33,7 @@ char *cat_files(int filec, char *filev[])
         bufsize = rbufp-readbuf;
         if ((catbuf = (char *) malloc(bufsize+1)) == NULL) {    // +1 for terminating '\0'
             printerr("error: cannot allocate memory");
-            exit(1);
+            exit(EXIT_FAILURE);
         }
         strncpy(catbuf, readbuf, bufsize);
     } else {
@@ -42,7 +42,7 @@ char *cat_files(int filec, char *filev[])
 
         if ((fbufs = (char **) malloc(filec * sizeof(char**))) == NULL) {
             printerr("error: cannot allocate memory");
-            exit(1);
+            exit(EXIT_FAILURE);
         }
         char **fbp = fbufs; // pointer in fbufs
         bufsize = 0;
@@ -51,7 +51,7 @@ char *cat_files(int filec, char *filev[])
             // open file stream
             if ((fp = fopen(*filev, "rb")) == NULL) {
                 printerr("error: cannot open file %s", *filev);
-                exit(1);
+                exit(EXIT_FAILURE);
             }
             
             // get size of file
@@ -63,11 +63,11 @@ char *cat_files(int filec, char *filev[])
             // read file in a buffer
             if ((*fbp = (char *) malloc(fsize+1)) == NULL) {
                 printerr("error: cannot allocate memory");
-                exit(1);
+                exit(EXIT_FAILURE);
             }
             if (fread(*fbp, 1, fsize, fp) != fsize) {
                 printerr("error: cannot read file %s", *filev);
-                exit(1);
+                exit(EXIT_FAILURE);
             }
             (*fbp)[fsize] = '\0';
             fbp++;
@@ -77,7 +77,7 @@ char *cat_files(int filec, char *filev[])
         // concatenate all files into catbuf
         if ((catbuf = (char *) malloc(bufsize+1)) == NULL) {
             printerr("error: cannot allocate memory");
-            exit(1);
+            exit(EXIT_FAILURE);
         }
         catp = catbuf;
         fbp = fbufs;
