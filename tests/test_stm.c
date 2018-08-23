@@ -15,7 +15,7 @@ void test_statements(char *st);
 int main()
 {
     prog = "test";
-    // test_statements("LXI A, B");
+    test_statements("LXI A, B");
     // test_statements("NOP");
     // test_statements("LABEL: NOP LB:");
     // test_statements("LABEL: LABEL:");

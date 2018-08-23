@@ -13,7 +13,7 @@
 // argument token type
 typedef enum TokType {
     TOK_HEX, TOK_DEC, TOK_OCT, TOK_BIN, TOK_PC, TOK_ASCII, TOK_LABEL, TOK_INSTR,
-    TOK_UNAOPER, TOK_BINOPER, TOK_PAREN
+    TOK_UNAOPER, TOK_BINOPER, TOK_PAREN, TOK_COMMA
 } TokType;
 
 // argument token definition
@@ -22,13 +22,21 @@ typedef struct Token {
     char *str;      // token string
 } Token;
 
+// instruction arguments definition
+typedef struct Args {
+    int nargs;      // #arguments (0-2)
+    Token *arg1;    // first argument token list
+    int ntok1;      // first argument token count
+    Token *arg2;    // second argument token list
+    int ntok2;      // second argument token count
+} Args;
+
 // program statement definition
 typedef struct Statement {
     uint16_t pc;    // program counter value
     char *label;    // label
     char *instr;    // instruction or pseudo-instruction
-    Token *arg1;    // first argument expression
-    Token *arg2;    // second argument expression
+    Args args;      // arguments
 } Statement;
 
 // instruction definition
