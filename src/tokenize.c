@@ -116,6 +116,21 @@ int get_arguments(char buf[], const Instr *insinfo, Args *args)
             exit(EXIT_FAILURE);
         } else {
             if (insinfo->nargs == 2) {
+
+                // skip whitespace
+                while (isspace(*bufp))
+                    bufp++;
+                // skip comments
+                while (*bufp == ';') {
+                    while (*bufp != '\n' && *bufp != '\0')
+                        bufp++;
+                    if (*bufp == '\n')
+                        bufp++;
+                    // skip whitespace
+                    while (isspace(*bufp))
+                        bufp++;
+                }
+                
                 // collect comma
                 if (*bufp != ',') {
                     if (iswdchr(*bufp))
@@ -177,6 +192,10 @@ int get_argument(char buf[], Token **arg, int *ntoks)
             printerr("error: unexpected operand %s", tokp->str);
             exit(EXIT_FAILURE);
 
+        } else if (tokp->type == TOK_LABEL && *ntoks > 0
+         && (isoperand((tokp-1)->type) || *(tokp-1)->str == ')')) {
+            bufp -= nread;
+            break;
         } else if (isoperand(tokp->type) && *ntoks > 0
          && (isoperand((tokp-1)->type) || (tokp-1)->type == TOK_INSTR
          || *(tokp-1)->str == ')')) {
@@ -446,7 +465,7 @@ char *validate_label(char *word, const Statement statements[], int nstmnt)
     // TODO: check if label is pseudo-instruction
     // check if label is instruction
     if (get_instr(label, NULL, NULL) != NULL) {
-        printerr("error: label %s is a defined mnemonic", label);
+        printerr("error: %s is a defined mnemonic; cannot be used as a label", label);
         exit(EXIT_FAILURE);
     }
 

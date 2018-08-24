@@ -15,18 +15,37 @@ void test_statements(char *st);
 int main()
 {
     prog = "test";
-    test_statements("LXI A, B");
-    // test_statements("NOP");
-    // test_statements("LABEL: NOP LB:");
+
+    // instructions
+    test_statements("NOP");
+    test_statements("INX B");
+    test_statements("LXI A, 0FFA6H");
+
+    // labels
+    test_statements("LABEL: NOP");
+    test_statements("@LB1: INX B");
+
+    // multiple statements
+    test_statements("NOP INX B LXI A, 0FFA6H");
+    test_statements("LABEL: NOP INX B LXI A, 0FFA6H @LB1: NOP");
+    test_statements("ALIAS: LABEL: NOP @LB1: NOP");
+
+    // whitespace and comments
+    test_statements("; comment");
+    test_statements("LABEL: NOP ; comment\n INX B "
+        "; comment\nLXI A,; comment\n 0FFA6H "
+        "; comment\n @LB1:; comment\n NOP; comment\n");
+
+    // warnings
+    test_statements("@LONGLABEL: NOP");
+    test_statements("@LABEL: @SBPDF:");
+
+    // errors
+    // test_statements("1LABEL:");
+    // test_statements("NOP:");
+    // test_statements("LABEL: BLA");
     // test_statements("LABEL: LABEL:");
     // test_statements("LABEL: LABEL");
-    // test_statements("LABEL: NOP");
-    // test_statements("LB: LABEL: NOP LXI LB2: ; comment");
-    // test_statements("; comment");
-    // test_statements("LABEL: BLA");
-    // test_statements("NOP:");
-    // test_statements("@LABEL:\n@SBPDF:");
-    // test_statements("1LABEL:");
 }
 
 int get_statements(char [], Statement []);
@@ -38,11 +57,30 @@ void test_statements(char *st)
     int nstmnt = get_statements(st, statements);
 
     for (int i = 0; i < nstmnt; i++) {
+        
+        // print program counter value
         printf("%04x\t", statements[i].pc);
+        
+        // print label
         if (statements[i].label)
             printf("%s:", statements[i].label);
+        
+        // print instruction
         if (statements[i].instr)
             printf("\t%s", statements[i].instr);
+
+        // print arguments
+        if (statements[i].args.nargs > 0) {
+            putchar('\t');
+            for (int j = 0; j < statements[i].args.ntok1; j++)
+                printf("%s ", (statements[i].args.arg1+j)->str);
+            if (statements[i].args.nargs == 2) {
+                printf(", ");
+                for (int j = 0; j < statements[i].args.ntok2; j++)
+                    printf("%s ", (statements[i].args.arg2+j)->str);
+            }
+        }
         putchar('\n');
     }
+    putchar('\n');
 }
