@@ -19,7 +19,10 @@ int main()
     // instructions
     test_statements("NOP");
     test_statements("INX B");
-    test_statements("LXI A, 0FFA6H");
+    test_statements("MOV A, B");
+    test_statements("HLT");
+    test_statements("DAD SP");
+    test_statements("INR A");
 
     // labels
     test_statements("LABEL: NOP");
@@ -36,6 +39,10 @@ int main()
         "; comment\nLXI A,; comment\n 0FFA6H "
         "; comment\n @LB1:; comment\n NOP; comment\n");
 
+    // nested instructions
+    test_statements("LABEL: LXI A, (NOP)");
+    test_statements("LABEL: LXI A, (LXI A , B)");
+
     // warnings
     test_statements("@LONGLABEL: NOP");
     test_statements("@LABEL: @SBPDF:");
@@ -45,6 +52,7 @@ int main()
     // test_statements("NOP:");
     // test_statements("LABEL: BLA");
     // test_statements("LABEL: LABEL:");
+    // test_statements("Label: lAbel:");
     // test_statements("LABEL: LABEL");
 }
 

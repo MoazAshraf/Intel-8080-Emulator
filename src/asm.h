@@ -43,11 +43,18 @@ typedef struct Statement {
 typedef struct Instr {
     uint8_t opcode; // operation code
     int size;       // equivalent machine code size in bytes
-    char *mnem;     // uppercase mnemonic
     int nargs;      // number of arguments
+    char *mnem;     // mnemonic
     char *arg1;     // first argument value
     char *arg2;     // second argument value; NULL if doesn't affect opcode
 } Instr;
+
+// pseudo-instruction definition
+typedef struct Pseudo {
+    int reqname;    // requires a name?
+    char *mnem;     // mnemonic
+    int nargs;      // number of arguments (2 = list)
+} Pseudo;
 
 // operator definition
 typedef struct Oper {

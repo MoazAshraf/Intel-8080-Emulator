@@ -484,13 +484,14 @@ char *validate_label(char *word, const Statement statements[], int nstmnt)
 }
 
 extern Instr instrs[];
+extern const int N_INSTRS;
 
 // get_instr: returns the first instruction definition with the matching criteria
 //  or NULL if it doesn't exist.
 Instr *get_instr(char *mnem, char *arg1, char *arg2)
 {
     Instr *instrp = instrs;
-    while (instrp - instrs < 0x100 && instrp->mnem) {
+    while (instrp - instrs < N_INSTRS && instrp->mnem) {
         if (strcicmp(mnem, instrp->mnem) == 0)
             if (arg1 == NULL)
                 return instrp;
