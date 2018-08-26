@@ -22,19 +22,23 @@ typedef struct Token {
     char *str;      // token string
 } Token;
 
-// instruction arguments definition
+// instruction argument definition
+typedef struct Arg {
+    Token *toks;    // token list
+    int ntoks;      // argument token count
+} Arg;
+
+// instruction argument list definition
 typedef struct Args {
-    int nargs;      // #arguments (0-2)
-    Token *arg1;    // first argument token list
-    int ntok1;      // first argument token count
-    Token *arg2;    // second argument token list
-    int ntok2;      // second argument token count
+    int nargs;      // argument count
+    Arg *args;      // argument list
 } Args;
 
 // program statement definition
 typedef struct Statement {
     uint16_t pc;    // program counter value
     char *label;    // label
+    char *name;     // for pseudo-instructions
     char *instr;    // instruction or pseudo-instruction
     Args args;      // arguments
 } Statement;
@@ -53,7 +57,7 @@ typedef struct Instr {
 typedef struct Pseudo {
     int reqname;    // requires a name?
     char *mnem;     // mnemonic
-    int nargs;      // number of arguments (2 = list)
+    int nargs;      // number of arguments ( >2 = list)
 } Pseudo;
 
 // operator definition
@@ -66,6 +70,7 @@ typedef struct Oper {
 #define MAX_WORD    256     // maximum length of a word
 #define MAX_LABEL   5       // maximum label length
 #define MAX_TOKENS  256     // maximum number of argument expression tokens
+#define MAX_ARGS    256     // maximum number of arguments in a list
 
 // is c a word character?
 #define iswdchr(c)      (isalnum(c) || (c) == '@' || (c) == '?')

@@ -28,6 +28,9 @@ int main()
     test_statements("LABEL: NOP");
     test_statements("@LB1: INX B");
 
+    // pseudo-instructions
+    test_statements("oblab: ORG 14H");
+
     // multiple statements
     test_statements("NOP INX B LXI A, 0FFA6H");
     test_statements("LABEL: NOP INX B LXI A, 0FFA6H @LB1: NOP");

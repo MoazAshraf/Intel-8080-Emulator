@@ -11,11 +11,12 @@
 #include <ctype.h>
 #include "asm.h"
 
-int get_arguments(char *, const Instr *, Args *);
-int get_argument(char *, Token **, int *);
+int get_arguments(char *, char *, int, Args *);
+int get_argument(char *, Arg *);
 int get_token(char *, Token *);
 int getword(char *, char *, int);
 Instr *get_instr(char *, char *, char *);
+Pseudo *get_pseudo(char *);
 Oper *get_unaoper(char *);
 Oper *get_binoper(char *);
 char *validate_label(char *, const Statement *, int);
@@ -63,24 +64,45 @@ int get_statements(char srcbuf[], Statement statements[])
                 strcpy(mnem, word);
 
                 Instr *insinfo;
-                if ((insinfo = get_instr(mnem, NULL, NULL)) == NULL) {
-                    // TODO: check psuedo instructions
+                Pseudo *pseudoinfo;
+                if ((insinfo = get_instr(mnem, NULL, NULL)) != NULL) {
+                    // store instruction
+                    if (statementp->instr == NULL)
+                        statementp->instr = mnem;
+                    else
+                        (++statementp)->instr = mnem;   // new statement
+
+                    // collect arguments
+                    srcp += get_arguments(srcp, insinfo->mnem, insinfo->nargs,
+                        &statementp->args);
+
+                    // store and increment pc
+                    statementp->pc = pc;
+                    pc += insinfo->size;
+
+                } else if ((pseudoinfo = get_pseudo(mnem)) != NULL) {
+                    // check name
+                    if (pseudoinfo->reqname && statementp->name == NULL) {
+                        printerr("error: pseudo-instruction %s requires a name",mnem);
+                        exit(EXIT_FAILURE);
+                    }
+                    // store pesudo instruction
+                    if (statementp->instr == NULL)
+                        statementp->instr = mnem;
+                    else
+                        (++statementp)->instr = mnem;   // new statement
+
+                    // collect arguments
+                    srcp += get_arguments(srcp, pseudoinfo->mnem, pseudoinfo->nargs,
+                        &statementp->args);
+
+                    // store pc
+                    statementp->pc = pc;
+
+                } else {
                     printerr("error: '%s' is not a defined mnemonic", mnem);
                     exit(EXIT_FAILURE);
                 }
-
-                // store instruction
-                if (statementp->instr == NULL)
-                    statementp->instr = mnem;
-                else
-                    (++statementp)->instr = mnem;   // new statement
-
-                // collect arguments
-                srcp += get_arguments(srcp, insinfo, &statementp->args);
-
-                // store and increment pc
-                statementp->pc = pc;
-                pc += insinfo->size;
             }
         } else if (*srcp == ';') {
             // skip comments
@@ -100,103 +122,98 @@ int get_statements(char srcbuf[], Statement statements[])
 }
 
 // get_arguments: collects instruction arguments, returns #characters read.
-int get_arguments(char buf[], const Instr *insinfo, Args *args)
+int get_arguments(char buf[], char *mnem, int nargs, Args *args)
 {
-    char *bufp = buf;   // pointer in buf
+    char *bufp = buf;       // pointer in buf
+    Arg arg_list[MAX_ARGS]; // temp. arg storage
+    Arg *argp = arg_list;   // pointer in arg_list
 
     // collect arguments
-    if (insinfo->nargs > 0) {
-        int nread;  // #characters read from buffer
-
-        // collect first argument
-        bufp += nread = get_argument(bufp, &args->arg1, &args->ntok1);
-        if (nread == 0) {
-            printerr("error: instruction %s takes %d arguments. "
-                "None provided.", insinfo->mnem, insinfo->nargs);
-            exit(EXIT_FAILURE);
-        } else {
-            if (insinfo->nargs == 2) {
-
-                // skip whitespace
-                while (isspace(*bufp))
-                    bufp++;
-                // skip comments
-                while (*bufp == ';') {
-                    while (*bufp != '\n' && *bufp != '\0')
-                        bufp++;
-                    if (*bufp == '\n')
-                        bufp++;
-                    // skip whitespace
-                    while (isspace(*bufp))
-                        bufp++;
-                }
-                
-                // collect comma
-                if (*bufp != ',') {
-                    if (iswdchr(*bufp))
-                        printerr("error: instruction %s takes %d "
-                            "arguments. 1 provided.",
-                            insinfo->mnem, insinfo->nargs);
-                    else
-                        printerr("error: unexpected token '%c'", *bufp);
-                    exit(EXIT_FAILURE);
-                } else
-                    bufp++;
-
-                // collect second argument
-                bufp += nread = get_argument(bufp, &args->arg2, &args->ntok2);
-                if (nread == 0) {
-                    printerr("error: instruction %s takes %d arguments. "
-                        "1 provided.", insinfo->mnem, insinfo->nargs);
-                    exit(EXIT_FAILURE);
-                }
-            }
+    for (argp->ntoks = 0; nargs > 2 || argp-arg_list < nargs; argp++) {
+        bufp += get_argument(bufp, argp);
+        if (argp->ntoks == 0) {
+            if (nargs <= 2) {
+                printerr("error: instruction %s takes %d arguments. "
+                    "%d provided.", mnem, nargs, argp-arg_list);
+                exit(EXIT_FAILURE);
+            } else
+                break;  // for lists
         }
+        if (nargs <= 2 && argp-arg_list == nargs-1) {
+            argp++;
+            break;
+        }
+
+        // skip whitespace
+        while (isspace(*bufp))
+            bufp++;
+        // skip comments
+        while (*bufp == ';') {
+            while (*bufp != '\n' && *bufp != '\0')
+                bufp++;
+            if (*bufp == '\n')
+                bufp++;
+            // skip whitespace
+            while (isspace(*bufp))
+                bufp++;
+        }
+        
+        // collect comma
+        if (*bufp != ',' ) {
+            if (iswdchr(*bufp))
+                printerr("error: instruction %s takes %d arguments. "
+                    "%d provided.", mnem, nargs, argp-arg_list);
+            else
+                printerr("error: unexpected token '%c'", *bufp);
+            exit(EXIT_FAILURE);
+        } else
+            bufp++;
     }
-    args->nargs = insinfo->nargs;
+        
+    args->nargs = argp-arg_list;
     
     return bufp-buf;
 }
 
 // get_argument: collects an argument expression, returns #characters read.
-int get_argument(char buf[], Token **arg, int *ntoks)
+int get_argument(char buf[], Arg *arg)
 {
     char *bufp;             // pointer in buf
     int nread;              // number of characters read from buffer
     Token toks[MAX_TOKENS]; // temporary token storage
     Token *tokp;            // pointer in toks
-    Token *argp;            // pointer in *arg
+    Token *argp;            // pointer in arg->toks
     int nparen;             // parentheses balance
 
     // collect tokens in toks
     bufp = buf;
     tokp = toks;
     nparen = 0; 
-    for (*ntoks = 0; *ntoks < MAX_TOKENS && (nread = get_token(bufp, tokp)) > 0
-     && tokp->type != -1; tokp++, (*ntoks)++) { 
+    for (arg->ntoks = 0; arg->ntoks < MAX_TOKENS && (nread = get_token(bufp, tokp)) > 0
+     && tokp->type != -1; tokp++, (arg->ntoks)++) { 
         // increment buffer
         bufp += nread;
 
         // unary and binary + and - type check
         if (*tokp->str == '+' || *tokp->str == '-') {
-            if (*ntoks > 0 && (isoperand((tokp-1)->type) || *(tokp-1)->str == ')'))
+            if (arg->ntoks > 0 && (isoperand((tokp-1)->type) || *(tokp-1)->str == ')'))
                 tokp->type = TOK_BINOPER;
             else
                 tokp->type = TOK_UNAOPER;
         }
 
         // syntax check
-        if (tokp->type == TOK_BINOPER && (*ntoks == 0
+        if (tokp->type == TOK_BINOPER && (arg->ntoks == 0
          || !isoperand((tokp-1)->type) && *(tokp-1)->str != ')')) {
 
             printerr("error: unexpected operand %s", tokp->str);
             exit(EXIT_FAILURE);
 
-        } else if (tokp->type == TOK_LABEL && *ntoks > 0
+        } else if (tokp->type == TOK_LABEL && arg->ntoks > 0
          && (isoperand((tokp-1)->type) || *(tokp-1)->str == ')')) {
             bufp -= nread;
             break;
-        } else if (isoperand(tokp->type) && *ntoks > 0
+        } else if (isoperand(tokp->type) && arg->ntoks > 0
          && (isoperand((tokp-1)->type) || (tokp-1)->type == TOK_INSTR
          || *(tokp-1)->str == ')')) {
 
@@ -215,52 +232,54 @@ int get_argument(char buf[], Token **arg, int *ntoks)
                 }
             }
         } else if (tokp->type == TOK_INSTR) {
-            if (*ntoks == 0 || *(tokp-1)->str != '(') {
+            if (arg->ntoks == 0 || *(tokp-1)->str != '(') {
                 bufp -= nread;
                 break;
             } else {  // collect nested instruction arguments
                 Instr *insinfo;
                 Args args;
                 insinfo = get_instr(tokp->str, NULL, NULL);
-                bufp += get_arguments(bufp, insinfo, &args);
+                bufp += get_arguments(bufp, insinfo->mnem, insinfo->nargs, &args);
                 if (args.nargs > 0) {
                     // for the instruction token
                     tokp++;
-                    (*ntoks)++;
+                    (arg->ntoks)++;
 
                     // store first nested argument
-                    Token *atokp = args.arg1;
-                    while (*ntoks < MAX_TOKENS && atokp-args.arg1 < args.ntok1) {
+                    Token *atokp = args.args[0].toks;
+                    while (arg->ntoks < MAX_TOKENS
+                     && atokp-args.args[0].toks < arg.args[0].ntoks) {
                         tokp->type = atokp->type;
                         tokp->str = atokp->str;
                         atokp++;
                         tokp++;
-                        (*ntoks)++;
+                        (arg.args[0].ntoks)++;
                     }
                     if (args.nargs == 2) {
                         // store comma token
-                        if (*ntoks < MAX_TOKENS) {
+                        if (arg->ntoks < MAX_TOKENS) {
                             tokp->type = TOK_COMMA;
                             tokp->str = (char *) malloc(2);
                             strcpy(tokp->str, ",");
                             tokp++;
-                            (*ntoks)++;
+                            (arg->ntoks)++;
                         }
 
                         // store second nested argument
                         atokp = args.arg2;
-                        while (*ntoks < MAX_TOKENS && atokp-args.arg2 < args.ntok2) {
+                        while (arg->ntoks < MAX_TOKENS
+                         && atokp-args.arg2 < args.ntok2) {
                             tokp->type = atokp->type;
                             tokp->str = atokp->str;
                             atokp++;
                             tokp++;
-                            (*ntoks)++;
+                            (arg->ntoks)++;
                         }
                     }
 
                     // to balance instruction token
                     tokp--;
-                    (*ntoks)--;
+                    (arg->ntoks)--;
                 }
             }
         }
@@ -276,15 +295,15 @@ int get_argument(char buf[], Token **arg, int *ntoks)
     // }
 
     // if last token is an operator
-    if ((toks+*ntoks-1)->type == TOK_BINOPER
-     || (toks+*ntoks-1)->type == TOK_UNAOPER) {
-        printerr("error: expected operand after %s", (toks+*ntoks-1)->str);
+    if ((toks+arg->ntoks-1)->type == TOK_BINOPER
+     || (toks+arg->ntoks-1)->type == TOK_UNAOPER) {
+        printerr("error: expected operand after %s", (toks+arg->ntoks-1)->str);
         exit(EXIT_FAILURE);
     }
 
     // store argument tokens
-    *arg = (Token *) malloc(*ntoks * sizeof(Token));
-    for (tokp = toks, argp = *arg; tokp-toks < *ntoks; tokp++, argp++) {
+    *arg = (Token *) malloc(arg->ntoks * sizeof(Token));
+    for (tokp = toks, argp = arg->toks; tokp-toks < arg->ntoks; tokp++, argp++) {
         argp->str = tokp->str;
         argp->type = tokp->type;
     }
@@ -501,6 +520,22 @@ Instr *get_instr(char *mnem, char *arg1, char *arg2)
                 else if (strcicmp(arg2, instrp->arg2) == 0)
                     return instrp;
         instrp++;
+    }
+    return NULL;
+}
+
+extern Pseudo pseudos[];
+extern const int N_PSEUDOS;
+
+// get_pseudo: returns the pseudo-instruction definition with the matching mnemonic or
+//  NULL if it doesn't exist.
+Pseudo* get_pseudo(char *mnem)
+{
+    Pseudo* pseudop = pseudos;
+    while (pseudop - pseudos < N_PSEUDOS) {
+        if (strcicmp(mnem, pseudop->mnem) == 0)
+            return pseudop;
+        pseudop++;
     }
     return NULL;
 }

@@ -27,8 +27,8 @@ const int N_BINOPERS = sizeof binopers / sizeof(Oper);
 
 // pseudo-intructions
 Pseudo pseudos[] = {
-    {0, "DB",    2},
-    {0, "DW",    2},
+    {0, "DB",    3},
+    {0, "DW",    3},
     {0, "DS",    1},
     {0, "ORG",   1},
     {1, "EQU",   1},
@@ -36,7 +36,7 @@ Pseudo pseudos[] = {
     {0, "END",   0},
     {0, "IF",    1},
     {0, "ENDIF", 0},
-    {1, "MACRO", 2},
+    {1, "MACRO", 3},
     {0, "ENDM",  0}
 };
 
