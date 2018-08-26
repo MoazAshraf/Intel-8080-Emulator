@@ -36,7 +36,7 @@ Pseudo pseudos[] = {
     {0, "END",   0},
     {0, "IF",    1},
     {0, "ENDIF", 0},
-    {1, "MACRO", 3},
+    {1, "MACRO", 4},
     {0, "ENDM",  0}
 };
 

@@ -46,6 +46,11 @@ int get_statements(char srcbuf[], Statement statements[])
         if (wlen > 0) {
             if (*srcp == ':') {
                 // end any open statement
+                if (statementp->name && !statementp->instr) {
+                    printerr("error: '%s' is not a defined mnemonic",
+                        statementp->name);
+                    exit(EXIT_FAILURE);
+                }
                 if (statementp->label || statementp->instr)
                     statementp++;   // start a new statement
 
@@ -66,11 +71,20 @@ int get_statements(char srcbuf[], Statement statements[])
                 Instr *insinfo;
                 Pseudo *pseudoinfo;
                 if ((insinfo = get_instr(mnem, NULL, NULL)) != NULL) {
+
+                    // instructions don't take names
+                    if (statementp->name && !statementp->instr) {
+                        printerr("error: '%s' is not a defined mnemonic",
+                            statementp->name);
+                        exit(EXIT_FAILURE);
+                    }
+
                     // store instruction
                     if (statementp->instr == NULL)
                         statementp->instr = mnem;
-                    else
+                    else {
                         (++statementp)->instr = mnem;   // new statement
+                    }
 
                     // collect arguments
                     srcp += get_arguments(srcp, insinfo->mnem, insinfo->nargs,
@@ -89,8 +103,14 @@ int get_statements(char srcbuf[], Statement statements[])
                     // store pesudo instruction
                     if (statementp->instr == NULL)
                         statementp->instr = mnem;
-                    else
+                    else {
+                        if (statementp->name && !statementp->instr) {
+                            printerr("error: '%s' is not a defined mnemonic",
+                                statementp->name);
+                            exit(EXIT_FAILURE);
+                        }
                         (++statementp)->instr = mnem;   // new statement
+                    }
 
                     // collect arguments
                     srcp += get_arguments(srcp, pseudoinfo->mnem, pseudoinfo->nargs,
@@ -99,6 +119,8 @@ int get_statements(char srcbuf[], Statement statements[])
                     // store pc
                     statementp->pc = pc;
 
+                } else if (statementp->name == NULL) {
+                    statementp->name = mnem;
                 } else {
                     printerr("error: '%s' is not a defined mnemonic", mnem);
                     exit(EXIT_FAILURE);
@@ -117,6 +139,12 @@ int get_statements(char srcbuf[], Statement statements[])
         }
     }
 
+    if (statementp->name && !statementp->instr) {
+        printerr("error: '%s' is not a defined mnemonic",
+            statementp->name);
+        exit(EXIT_FAILURE);
+    }
+
     return statementp - statements +
         ((statementp->label || statementp->instr) ? 1 : 0);
 }
@@ -133,11 +161,19 @@ int get_arguments(char buf[], char *mnem, int nargs, Args *args)
         bufp += get_argument(bufp, argp);
         if (argp->ntoks == 0) {
             if (nargs <= 2) {
-                printerr("error: instruction %s takes %d arguments. "
-                    "%d provided.", mnem, nargs, argp-arg_list);
+                printerr("error: %s takes %d argumen%s. %d provided.",
+                    mnem, nargs, ((nargs == 1) ? "t" : "ts"), argp-arg_list);
                 exit(EXIT_FAILURE);
-            } else
-                break;  // for lists
+            } else {
+                if (nargs == 3 && argp-arg_list == 0) {
+                    printerr("error: %s takes a list of arguments. %d provided.",
+                        mnem, argp-arg_list);
+                    exit(EXIT_FAILURE);
+                } else {
+                    argp++;
+                    break;  // for lists
+                }
+            }
         }
         if (nargs <= 2 && argp-arg_list == nargs-1) {
             argp++;
@@ -159,18 +195,26 @@ int get_arguments(char buf[], char *mnem, int nargs, Args *args)
         }
         
         // collect comma
-        if (*bufp != ',' ) {
-            if (iswdchr(*bufp))
-                printerr("error: instruction %s takes %d arguments. "
-                    "%d provided.", mnem, nargs, argp-arg_list);
-            else
-                printerr("error: unexpected token '%c'", *bufp);
-            exit(EXIT_FAILURE);
+        if (*bufp != ',') {
+            if (nargs <= 2) {
+                if (iswdchr(*bufp))
+                    printerr("error: %s takes %d argumen%s. %d provided.",
+                        mnem, nargs, ((nargs == 1) ? "t" : "ts"), argp-arg_list);
+                else
+                    printerr("error: unexpected token '%c'", *bufp);
+                exit(EXIT_FAILURE);
+            } else {
+                argp++;
+                break;
+            }
         } else
             bufp++;
     }
         
     args->nargs = argp-arg_list;
+    args->args = (Arg *) malloc(args->nargs * sizeof(Arg));
+    for (int i = 0; i < args->nargs; i++)
+        args->args[i] = arg_list[i];
     
     return bufp-buf;
 }
@@ -241,19 +285,20 @@ int get_argument(char buf[], Arg *arg)
                 insinfo = get_instr(tokp->str, NULL, NULL);
                 bufp += get_arguments(bufp, insinfo->mnem, insinfo->nargs, &args);
                 if (args.nargs > 0) {
+
                     // for the instruction token
                     tokp++;
                     (arg->ntoks)++;
 
                     // store first nested argument
-                    Token *atokp = args.args[0].toks;
-                    while (arg->ntoks < MAX_TOKENS
-                     && atokp-args.args[0].toks < arg.args[0].ntoks) {
+                    Arg arg1 = args.args[0];
+                    Token *atokp = arg1.toks;
+                    while (arg->ntoks < MAX_TOKENS && atokp-arg1.toks < arg1.ntoks) {
                         tokp->type = atokp->type;
                         tokp->str = atokp->str;
                         atokp++;
                         tokp++;
-                        (arg.args[0].ntoks)++;
+                        (arg->ntoks)++;
                     }
                     if (args.nargs == 2) {
                         // store comma token
@@ -266,9 +311,10 @@ int get_argument(char buf[], Arg *arg)
                         }
 
                         // store second nested argument
-                        atokp = args.arg2;
+                        Arg arg2 = args.args[1];
+                        atokp = arg2.toks;
                         while (arg->ntoks < MAX_TOKENS
-                         && atokp-args.arg2 < args.ntok2) {
+                         && atokp-arg2.toks < arg2.ntoks) {
                             tokp->type = atokp->type;
                             tokp->str = atokp->str;
                             atokp++;
@@ -302,7 +348,7 @@ int get_argument(char buf[], Arg *arg)
     }
 
     // store argument tokens
-    *arg = (Token *) malloc(arg->ntoks * sizeof(Token));
+    arg->toks = (Token *) malloc(arg->ntoks * sizeof(Token));
     for (tokp = toks, argp = arg->toks; tokp-toks < arg->ntoks; tokp++, argp++) {
         argp->str = tokp->str;
         argp->type = tokp->type;

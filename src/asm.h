@@ -57,7 +57,7 @@ typedef struct Instr {
 typedef struct Pseudo {
     int reqname;    // requires a name?
     char *mnem;     // mnemonic
-    int nargs;      // number of arguments ( >2 = list)
+    int nargs;      // number of arguments ( 3 = req. list, >3 = optional list)
 } Pseudo;
 
 // operator definition

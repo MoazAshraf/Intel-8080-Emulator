@@ -67,22 +67,21 @@ int main()
     return 0;
 }
 
-int get_argument(char *, Token **, int *);
+int get_argument(char *, Arg *);
 
 void test_argument(char *s)
 {
-    Token *arg;
     Token *tokp;
-    int ntoks;
-    get_argument(s, &arg, &ntoks);
+    Arg arg;
+    get_argument(s, &arg);
 
-    for (tokp = arg; tokp-arg < ntoks; tokp++) {
+    for (tokp = arg.toks; tokp-arg.toks < arg.ntoks; tokp++) {
         if (tokp->type == TOK_BINOPER)
             printf("  %s   ", tokp->str);
         else
             printf("%s ", tokp->str);
         
-        if (tokp-arg == ntoks-1)
+        if (tokp-arg.toks == arg.ntoks-1)
             putchar('\n');
     }
 }

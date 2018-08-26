@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
     srcbuf = cat_files(argc-1, argv+1);
     
     // TODO: lexical analysis, syntax checking, statement collection
-    Statement statements[MAX_STMNTS];
+    Statement *statements = (Statement *) calloc(MAX_STMNTS, sizeof(Statement));
     int nstmnt = get_statements(srcbuf, statements);
     free(srcbuf);
 

@@ -29,7 +29,16 @@ int main()
     test_statements("@LB1: INX B");
 
     // pseudo-instructions
+    test_statements("oblab: DW 14H,1FH,16H");
+    test_statements("oblab: DB 1415H,1F17H,16FFH");
+    test_statements("oblab: DB 'abcdefg'");
     test_statements("oblab: ORG 14H");
+    test_statements("oblab: name EQU 14H");
+    test_statements("oblab: name SET val");
+    test_statements("oblab: END");
+    test_statements("oblab: IF 1 ENDIF");
+    test_statements("oblab: name MACRO NOP ENDM");
+    test_statements("oblab: name MACRO 1,2,3 NOP ENDM");
 
     // multiple statements
     test_statements("NOP INX B LXI A, 0FFA6H");
@@ -57,6 +66,10 @@ int main()
     // test_statements("LABEL: LABEL:");
     // test_statements("Label: lAbel:");
     // test_statements("LABEL: LABEL");
+    // test_statements("oblab: SET val");
+    // test_statements("oblab: EQU val");
+    test_statements("oblab: name");
+    // test_statements("oblab: name NOP");
 }
 
 int get_statements(char [], Statement []);
@@ -75,20 +88,25 @@ void test_statements(char *st)
         // print label
         if (statements[i].label)
             printf("%s:", statements[i].label);
+        putchar('\t');
+
+        // print name
+        if (statements[i].name)
+            printf("%s", statements[i].name);
+        putchar('\t');
         
         // print instruction
         if (statements[i].instr)
-            printf("\t%s", statements[i].instr);
+            printf("%s", statements[i].instr);
+        putchar('\t');
 
         // print arguments
         if (statements[i].args.nargs > 0) {
-            putchar('\t');
-            for (int j = 0; j < statements[i].args.ntok1; j++)
-                printf("%s ", (statements[i].args.arg1+j)->str);
-            if (statements[i].args.nargs == 2) {
-                printf(", ");
-                for (int j = 0; j < statements[i].args.ntok2; j++)
-                    printf("%s ", (statements[i].args.arg2+j)->str);
+            for (int j = 0; j < statements[i].args.nargs; j++) {
+                for (int k = 0; k < statements[i].args.args[j].ntoks; k++)
+                    printf("%s ", statements[i].args.args[j].toks[k].str);
+                if (j < statements[i].args.nargs-1)
+                    printf(", ");
             }
         }
         putchar('\n');
