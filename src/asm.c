@@ -9,8 +9,9 @@
 
 char *prog; // program name
 
-char *cat_files(int argc, char *argv[]);
-int get_statements(char [], Statement []);
+char *cat_files(int argc, char **argv);
+int get_statements(char *, Statement *);
+int assemble(const Statement *, int, char *);
 
 // assembles Intel 8080 source code.
 int main(int argc, char *argv[])
@@ -21,12 +22,17 @@ int main(int argc, char *argv[])
     // load argument files or read from stdin
     srcbuf = cat_files(argc-1, argv+1);
     
-    // TODO: lexical analysis, syntax checking, statement collection
+    // allocate memory and collect statements
     Statement *statements = (Statement *) calloc(MAX_STMNTS, sizeof(Statement));
     int nstmnt = get_statements(srcbuf, statements);
+    
+    // free input source buffer
     free(srcbuf);
 
-    // TODO: start assembly
+    // start assembly
+    char outbuf[MAX_PROG];
+    int outsize = assemble(statements, nstmnt, outbuf);
+
     // TODO: output machine code
     // TODO: free all open buffers and pointers
 

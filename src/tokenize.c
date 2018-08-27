@@ -122,7 +122,7 @@ int get_statements(char srcbuf[], Statement statements[])
                 } else if (statementp->name == NULL) {
                     statementp->name = mnem;
                 } else {
-                    printerr("error: '%s' is not a defined mnemonic", mnem);
+                    printerr("error: '%s' is not a defined mnemonic", statementp->name);
                     exit(EXIT_FAILURE);
                 }
             }
@@ -134,7 +134,7 @@ int get_statements(char srcbuf[], Statement statements[])
                 srcp++;
             continue;
         } else if (*srcp != '\0') {
-            printerr("error: unexpected token '%c'", *srcp);
+            printerr("error: unexpected token %c", *srcp);
             exit(EXIT_FAILURE);
         }
     }
@@ -201,7 +201,7 @@ int get_arguments(char buf[], char *mnem, int nargs, Args *args)
                     printerr("error: %s takes %d argumen%s. %d provided.",
                         mnem, nargs, ((nargs == 1) ? "t" : "ts"), argp-arg_list);
                 else
-                    printerr("error: unexpected token '%c'", *bufp);
+                    printerr("error: unexpected token %c", *bufp);
                 exit(EXIT_FAILURE);
             } else {
                 argp++;

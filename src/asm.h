@@ -71,6 +71,7 @@ typedef struct Oper {
 #define MAX_LABEL   5       // maximum label length
 #define MAX_TOKENS  256     // maximum number of argument expression tokens
 #define MAX_ARGS    256     // maximum number of arguments in a list
+#define MAX_PROG    0x10000 // maximum output program size in bytes
 
 // is c a word character?
 #define iswdchr(c)      (isalnum(c) || (c) == '@' || (c) == '?')

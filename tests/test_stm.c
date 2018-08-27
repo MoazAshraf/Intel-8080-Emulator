@@ -68,8 +68,12 @@ int main()
     // test_statements("LABEL: LABEL");
     // test_statements("oblab: SET val");
     // test_statements("oblab: EQU val");
-    test_statements("oblab: name");
+    // test_statements("oblab: name");
     // test_statements("oblab: name NOP");
+    
+    // test_statements("Yo");
+    // test_statements("what's up?");
+    // test_statements("Yo what's up?");
 }
 
 int get_statements(char [], Statement []);
