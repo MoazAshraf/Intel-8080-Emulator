@@ -66,6 +66,19 @@ typedef struct Oper {
     int prec;       // operator's precedence
 } Oper;
 
+// instruction label definition
+typedef struct Label {
+    char *key;
+    uint16_t value;
+} Label;
+
+// expression linked list node
+typedef struct ExprNode {
+    int value;              // if node is operand
+    Oper *oper;             // if node is operator
+    struct ExprNode *next;  // next node in list
+} ExprNode;
+
 #define MAX_STMNTS  0x20000 // maximum number of program statements
 #define MAX_WORD    256     // maximum length of a word
 #define MAX_LABEL   5       // maximum label length

@@ -74,6 +74,10 @@ int main()
     // test_statements("Yo");
     // test_statements("what's up?");
     // test_statements("Yo what's up?");
+
+    // test_statements("LXI A, (1 + 2");
+    // test_statements("LXI A, 1 + 2)");
+    // test_statements("LXI A, (1 + 2))");
 }
 
 int get_statements(char [], Statement []);
