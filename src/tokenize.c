@@ -15,13 +15,7 @@ int get_arguments(char *, char *, int, Args *);
 int get_argument(char *, Arg *);
 int get_token(char *, Token *);
 int getword(char *, char *, int);
-Instr *get_instr(char *, char *, char *);
-Pseudo *get_pseudo(char *);
-Oper *get_unaoper(char *);
-Oper *get_binoper(char *);
 char *validate_label(char *, const Statement *, int);
-void printerr(char *, ...);
-int strcicmp(const char *, const char *);
 
 // get_statements: collects program statements and checks for syntax errors,
 //   returns total number of collected statements.
@@ -492,10 +486,10 @@ int get_token(char buf[], Token *tok)
     }
 
     // copy token string
-    wlen = strlen(word);
+    wlen = (tok->type == TOK_LABEL) ? min(MAX_LABEL, strlen(word)) : strlen(word);
     if (wlen > 0) {
         tok->str = (char *) malloc(wlen+1);
-        strcpy(tok->str, word);
+        strncpy(tok->str, word, wlen);
     }
 
     return bufp-buf;

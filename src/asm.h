@@ -86,6 +86,9 @@ typedef struct ExprNode {
 #define MAX_ARGS    256     // maximum number of arguments in a list
 #define MAX_PROG    0x10000 // maximum output program size in bytes
 
+// minimum of a and b
+#define min(a,b)        (((a) < (b)) ? (a) : (b))
+
 // is c a word character?
 #define iswdchr(c)      (isalnum(c) || (c) == '@' || (c) == '?')
 
@@ -97,5 +100,13 @@ typedef struct ExprNode {
                          || (t) == TOK_PC       \
                          || (t) == TOK_ASCII    \
                          || (t) == TOK_LABEL)
+
+// function declarations
+void printerr(char *, ...);
+int strcicmp(const char *, const char *);
+Instr *get_instr(char *, char *, char *);
+Pseudo *get_pseudo(char *);
+Oper *get_unaoper(char *);
+Oper *get_binoper(char *);
 
 #endif  // ASM_H
