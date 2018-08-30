@@ -1,9 +1,13 @@
+#include <stdio.h>  // TODO: remove this
 #include <stdlib.h>
 #include "asm.h"
 
 int evaluate(const Arg *, const Label [], int, int);
 int str_to_int(char *, int);
 int ascii_to_code(char *);
+
+extern Oper binopers[];
+extern Oper unaopers[];
 
 // assemble: assemble an array of statements into Intel 8080 machine code,
 //  return length of output.
@@ -34,8 +38,10 @@ int assemble(const Statement statements[], int nstmnt, char outbuf[])
         // evaluate arguments
         int args[statements[i].args.nargs];
 
-        for (j = 0; j < statements[i].args.nargs; j++)
+        for (j = 0; j < statements[i].args.nargs; j++) {
             args[j] = evaluate(statements[i].args.args+j, labels, nlabels, pc);
+            printf("%d\n", args[j]);    // TODO: remove this
+        }
 
         // check arguments count and size
         // TODO: execute pseudo-instructions
@@ -52,15 +58,27 @@ int evaluate(const Arg *arg, const Label labels[], int nlabels, int pc)
     static int i = 0;
 
     // expression linked list
-    ExprNode *head = (ExprNode *) malloc(sizeof(ExprNode));
-    ExprNode *curr = head;
+    ExprNode *head = NULL;
+    ExprNode *curr = NULL;
 
     int result = 0;
     int inparen = 0;
 
     // collect expression nodes
-    for (; i < arg->ntoks; i++) {
+    for ( ; i < arg->ntoks; i++) {
         int val;
+
+        // allocate memory for nodes
+        if (curr == NULL) {
+            curr = (ExprNode *) malloc(sizeof(ExprNode));
+            curr->prev = NULL;
+            head = curr;
+        } else if (curr->next == NULL) {
+            curr->next = (ExprNode *) malloc(sizeof(ExprNode));
+            curr->next->prev = curr;
+            curr = curr->next;
+        }
+        curr->next = NULL;
 
         if (arg->toks[i].str[0] == '(') {
             if (i+1 < arg->ntoks) {
@@ -70,8 +88,10 @@ int evaluate(const Arg *arg, const Label labels[], int nlabels, int pc)
                     // if (i+1 < arg->ntoks)    // collect arguments
                 } else {    // evaluate parentheses
                     val = evaluate(arg, labels, nlabels, pc);
-                    if (arg->toks[i].str[0] == ')')
+                    if (arg->toks[i].str[0] == ')') {
                         curr->value = val;
+                        curr->oper = NULL;
+                    }
                     else
                         printerr("debug warning: ) missing.");  // TODO: remove this
                 }
@@ -110,18 +130,49 @@ int evaluate(const Arg *arg, const Label labels[], int nlabels, int pc)
                     break;
             }
             curr->value = val;
+            curr->oper == NULL;
         } else if (arg->toks[i].type == TOK_UNAOPER)
             curr->oper = get_unaoper(arg->toks[i].str);
         else if (arg->toks[i].type == TOK_BINOPER)
             curr->oper = get_binoper(arg->toks[i].str);
-
-        curr->next = (ExprNode *) malloc(sizeof(ExprNode));
-        curr = curr->next;
-
-        // TODO: operators
     }
 
-    // TODO: evaluate expression list
+    // evaluate expression list
+    int prec;
+    for (prec = 0; prec <= MAX_PREC; prec++)
+        for (curr = head; curr && curr->next; curr = curr->next)
+            if (curr->oper && curr->oper->prec == prec) {
+                // evaluate operations
+                if (curr->oper == binopers+0)       // * (multiply)
+                    curr->prev->value = curr->prev->value * curr->next->value;
+                else if (curr->oper == binopers+1)  // / (divide)
+                    curr->prev->value = curr->prev->value / curr->next->value;
+                else if (curr->oper == binopers+2)  // MOD (modulo)
+                    curr->prev->value = curr->prev->value % curr->next->value;
+                else if (curr->oper == binopers+3)  // SHR (shift right)
+                    curr->prev->value = curr->prev->value >> curr->next->value;
+                else if (curr->oper == binopers+4)  // SHL (shift left)
+                    curr->prev->value = curr->prev->value << curr->next->value;
+                else if (curr->oper == binopers+5)  // + (addition)
+                    curr->prev->value = curr->prev->value + curr->next->value;
+                else if (curr->oper == binopers+6)  // + (subtraction)
+                    curr->prev->value = curr->prev->value - curr->next->value;
+                else if (curr->oper == binopers+7)  // AND (bitwise AND)
+                    curr->prev->value = curr->prev->value & curr->next->value;
+                else if (curr->oper == binopers+8)  // OR (bitwise OR)
+                    curr->prev->value = curr->prev->value | curr->next->value;
+                else if (curr->oper == binopers+9)  // XOR (bitwise     xOR)
+                    curr->prev->value = curr->prev->value ^ curr->next->value;
+
+                // TODO: unary operators
+
+                // replace operator and operands with result
+                curr->prev->next = curr->next->next;
+                if (curr->next->next)
+                    curr->next->next->prev = curr->prev;
+                curr = curr->next;
+            }
+    result = head->value;
 
     if (!inparen)
         i = 0;

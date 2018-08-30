@@ -76,6 +76,7 @@ typedef struct Label {
 typedef struct ExprNode {
     int value;              // if node is operand
     Oper *oper;             // if node is operator
+    struct ExprNode *prev;  // prev node in list
     struct ExprNode *next;  // next node in list
 } ExprNode;
 
@@ -85,6 +86,7 @@ typedef struct ExprNode {
 #define MAX_TOKENS  256     // maximum number of argument expression tokens
 #define MAX_ARGS    256     // maximum number of arguments in a list
 #define MAX_PROG    0x10000 // maximum output program size in bytes
+#define MAX_PREC    4       // maximum operator precedence
 
 // minimum of a and b
 #define min(a,b)        (((a) < (b)) ? (a) : (b))
