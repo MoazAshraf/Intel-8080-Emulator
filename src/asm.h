@@ -72,8 +72,13 @@ typedef struct Label {
     uint16_t value;
 } Label;
 
+typedef enum ExprNodeType {
+    ENT_VAL, ENT_UNA, ENT_BIN
+} ExprNodeType;
+
 // expression linked list node
 typedef struct ExprNode {
+    ExprNodeType type;      // value, unary operand or binary operand
     int value;              // if node is operand
     Oper *oper;             // if node is operator
     struct ExprNode *prev;  // prev node in list

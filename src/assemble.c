@@ -52,6 +52,8 @@ int assemble(const Statement statements[], int nstmnt, char outbuf[])
     return outp-outbuf;
 }
 
+int eval_list(ExprNode *);
+
 // evaluate: evaluates an argument expression to an integer value.
 int evaluate(const Arg *arg, const Label labels[], int nlabels, int pc)
 {
@@ -91,6 +93,7 @@ int evaluate(const Arg *arg, const Label labels[], int nlabels, int pc)
                     if (arg->toks[i].str[0] == ')') {
                         curr->value = val;
                         curr->oper = NULL;
+                        curr->type = ENT_VAL;
                     }
                     else
                         printerr("debug warning: ) missing.");  // TODO: remove this
@@ -131,52 +134,71 @@ int evaluate(const Arg *arg, const Label labels[], int nlabels, int pc)
             }
             curr->value = val;
             curr->oper == NULL;
-        } else if (arg->toks[i].type == TOK_UNAOPER)
+            curr->type = ENT_VAL;
+        } else if (arg->toks[i].type == TOK_UNAOPER) {
             curr->oper = get_unaoper(arg->toks[i].str);
-        else if (arg->toks[i].type == TOK_BINOPER)
+            curr->type = ENT_UNA;
+        } else if (arg->toks[i].type == TOK_BINOPER) {
             curr->oper = get_binoper(arg->toks[i].str);
+            curr->type = ENT_BIN;
+        }
     }
 
     // evaluate expression list
-    int prec;
-    for (prec = 0; prec <= MAX_PREC; prec++)
-        for (curr = head; curr && curr->next; curr = curr->next)
-            if (curr->oper && curr->oper->prec == prec) {
-                // evaluate operations
-                if (curr->oper == binopers+0)       // * (multiply)
-                    curr->prev->value = curr->prev->value * curr->next->value;
-                else if (curr->oper == binopers+1)  // / (divide)
-                    curr->prev->value = curr->prev->value / curr->next->value;
-                else if (curr->oper == binopers+2)  // MOD (modulo)
-                    curr->prev->value = curr->prev->value % curr->next->value;
-                else if (curr->oper == binopers+3)  // SHR (shift right)
-                    curr->prev->value = curr->prev->value >> curr->next->value;
-                else if (curr->oper == binopers+4)  // SHL (shift left)
-                    curr->prev->value = curr->prev->value << curr->next->value;
-                else if (curr->oper == binopers+5)  // + (addition)
-                    curr->prev->value = curr->prev->value + curr->next->value;
-                else if (curr->oper == binopers+6)  // + (subtraction)
-                    curr->prev->value = curr->prev->value - curr->next->value;
-                else if (curr->oper == binopers+7)  // AND (bitwise AND)
-                    curr->prev->value = curr->prev->value & curr->next->value;
-                else if (curr->oper == binopers+8)  // OR (bitwise OR)
-                    curr->prev->value = curr->prev->value | curr->next->value;
-                else if (curr->oper == binopers+9)  // XOR (bitwise     xOR)
-                    curr->prev->value = curr->prev->value ^ curr->next->value;
-
-                // TODO: unary operators
-
-                // replace operator and operands with result
-                curr->prev->next = curr->next->next;
-                if (curr->next->next)
-                    curr->next->next->prev = curr->prev;
-                curr = curr->next;
-            }
-    result = head->value;
+    result = eval_list(head);
 
     if (!inparen)
         i = 0;
     return result;
+}
+
+int eval_unaoper(Oper *, int);
+int eval_binoper(Oper *, int, int);
+
+// eval_list: evaluate an expression list and return the result
+int eval_list(ExprNode *head)
+{
+    ExprNode *curr;
+
+    // TODO: evaluate expression list using eval_unaoper() and eval_binoper().
+
+    return head->value;
+}
+
+// eval_unaoper: evaluate an operation with one operand.
+int eval_unaoper(Oper *oper, int op)
+{
+    if (oper == unaopers+0)         // + (positive sign)
+        return op;
+    else if (oper == unaopers+1)    // - (negative sign)
+        return 0x10000-op;
+    else if (oper == unaopers+2)    // NOT (logical NOT)
+        return ~op && 0xffff;
+}
+
+// eval_binoper: evaluate an operation with two operands.
+int eval_binoper(Oper *oper, int op1, int op2)
+{
+    if (oper == binopers+0)         // * (multiply)
+        return op1 * op2;
+    else if (oper == binopers+1)    // / (divide)
+        return op1 / op2;
+    else if (oper == binopers+2)    // MOD (modulo)
+        return op1 % op2;
+    else if (oper == binopers+3)    // SHR (shift right)
+        return op1 >> op2;
+    else if (oper == binopers+4)    // SHL (shift left)
+        return op1 << op2;
+    else if (oper == binopers+5)    // + (addition)
+        return op1 + op2;
+    else if (oper == binopers+6)    // + (subtraction)
+        return op1 - op2;
+    else if (oper == binopers+7)    // AND (bitwise AND)
+        return op1 & op2;
+    else if (oper == binopers+8)    // OR (bitwise OR)
+        return op1 | op2;
+    else if (oper == binopers+9)    // XOR (bitwise XOR)
+        return op1 ^ op2;
 }
 
 #include <ctype.h>
