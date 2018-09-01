@@ -16,14 +16,14 @@ int main()
 {
     prog = "test";
 
-    test_assemble("LXI 5, 2");
-    // test_assemble("INR 2*3-5+2/4");
-    // test_assemble("INR 1 OR 0");
-    // test_assemble("INR 1 AND 0");
-    // test_assemble("INR 1 AND 1");
-    // test_assemble("INR 1 XOR 1");
-    // test_assemble("INR 5+3*2");
-    // test_assemble("INR (5+3)*2");
+    test_assemble("LXI -5, 2*3");
+    test_assemble("INR 2*3-5+2/4");
+    test_assemble("INR 1 OR 0");
+    test_assemble("INR 1 AND 0");
+    test_assemble("INR 1 AND 1");
+    test_assemble("INR 1 XOR 1");
+    test_assemble("INR 5+3*2");
+    test_assemble("INR (5+3)*2");
     // test_assemble("INR 5+(3*2)");
     // test_assemble("INR ((5+3)*2)");
     // test_assemble("INR ((5+3)*2) AND (5+3*2)");

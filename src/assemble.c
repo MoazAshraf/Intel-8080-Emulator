@@ -82,6 +82,8 @@ int evaluate(const Arg *arg, const Label labels[], int nlabels, int pc)
         }
         curr->next = NULL;
 
+        // evaluate parentheses
+        // TODO: fix extra node collected bug
         if (arg->toks[i].str[0] == '(') {
             if (i+1 < arg->ntoks) {
                 i++;
@@ -95,8 +97,10 @@ int evaluate(const Arg *arg, const Label labels[], int nlabels, int pc)
                         curr->oper = NULL;
                         curr->type = ENT_VAL;
                     }
-                    else
-                        printerr("debug warning: ) missing.");  // TODO: remove this
+                    else {
+                        printerr("error: missing closing )");  // TODO: remove this
+                        exit(EXIT_FAILURE);
+                    }
                 }
             }
         } else if (arg->toks[i].str[0] == ')') {
@@ -160,7 +164,66 @@ int eval_list(ExprNode *head)
 {
     ExprNode *curr;
 
-    // TODO: evaluate expression list using eval_unaoper() and eval_binoper().
+    // while the head is not the only node
+    while (head->next) {
+        // go through the list
+        for (curr = head; curr; curr = curr->next) {
+            // if node is operand
+            if (curr->type == ENT_VAL) {
+                Oper *prev_oper = NULL;
+                Oper *next_oper = NULL;
+
+                // get previous operator
+                if (curr->prev)
+                    if (curr->prev->oper)
+                        prev_oper = curr->prev->oper;
+                    else {
+                        printerr("error: expected operator before operand in "
+                            "expression list");
+                        exit(EXIT_FAILURE);
+                    }
+                // get next operator
+                if (curr->next)
+                    if (curr->next->oper)
+                        next_oper = curr->next->oper;
+                    else {
+                        printerr("error: expected operator after operand in "
+                            "expression list");
+                        exit(EXIT_FAILURE);
+                    }
+                // if left operator has higher or equal precedence than right operator
+                //  or if operand is the last node
+                if (prev_oper)
+                    if (!curr->next || next_oper && prev_oper->prec <= next_oper->prec) {
+                        // evaluate left operator
+                        if (curr->prev->type == ENT_UNA) {  // unary operator
+                            int val = eval_unaoper(prev_oper, curr->value);
+                            curr->prev->value = val;
+                            curr->prev->type = ENT_VAL;
+                            curr->prev->oper = NULL;
+                            curr->prev->next = curr->next;
+                            if (curr->next)
+                                curr->next->prev = curr->prev;
+                        } else if (curr->prev->type == ENT_BIN) {   // binary operator
+                            if (curr->prev->prev
+                              && curr->prev->prev->type == ENT_VAL) {
+                                int val = eval_binoper(prev_oper,
+                                    curr->prev->prev->value, curr->value);
+                                curr->prev->prev->value = val;
+                                curr->prev->prev->next = curr->next;
+                                if (curr->next)
+                                    curr->next->prev = curr->prev->prev;
+                            } else {
+                                printerr("error: expected operand before operator in "
+                                    "expression list");
+                                exit(EXIT_FAILURE);
+                            }
+                        }
+                        break;
+                    }
+            }
+        }
+    }
 
     return head->value;
 }
@@ -171,7 +234,7 @@ int eval_unaoper(Oper *oper, int op)
     if (oper == unaopers+0)         // + (positive sign)
         return op;
     else if (oper == unaopers+1)    // - (negative sign)
-        return 0x10000-op;
+        return -op;
     else if (oper == unaopers+2)    // NOT (logical NOT)
         return ~op && 0xffff;
 }
