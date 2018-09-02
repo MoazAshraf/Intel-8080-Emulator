@@ -83,7 +83,6 @@ int evaluate(const Arg *arg, const Label labels[], int nlabels, int pc)
         curr->next = NULL;
 
         // evaluate parentheses
-        // TODO: fix extra node collected bug
         if (arg->toks[i].str[0] == '(') {
             if (i+1 < arg->ntoks) {
                 i++;
@@ -96,14 +95,17 @@ int evaluate(const Arg *arg, const Label labels[], int nlabels, int pc)
                         curr->value = val;
                         curr->oper = NULL;
                         curr->type = ENT_VAL;
-                    }
-                    else {
+                    } else {
                         printerr("error: missing closing )");  // TODO: remove this
                         exit(EXIT_FAILURE);
                     }
                 }
             }
         } else if (arg->toks[i].str[0] == ')') {
+            if (curr->prev)
+                curr->prev->next = NULL;
+            free(curr);
+            curr = NULL;
             inparen = 1;
             break;
         } else if (isoperand(arg->toks[i].type)) { // evaluate operands
@@ -236,7 +238,7 @@ int eval_unaoper(Oper *oper, int op)
     else if (oper == unaopers+1)    // - (negative sign)
         return -op;
     else if (oper == unaopers+2)    // NOT (logical NOT)
-        return ~op && 0xffff;
+        return ~op & 0xffff;
 }
 
 // eval_binoper: evaluate an operation with two operands.
@@ -277,9 +279,9 @@ int str_to_int(char *s, int b)
         if (isdigit(*s))
             dig = *s-'0';
         else if (isupper(*s))
-            dig = *s-'A';
+            dig = 10 + *s-'A';
         else if (islower(*s))
-            dig = *s-'a';
+            dig = 10 + *s-'a';
         result = result * b + dig;
     }
 

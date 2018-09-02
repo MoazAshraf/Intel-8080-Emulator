@@ -9,6 +9,7 @@
 #include "../src/asm.h"
 
 void test_assemble(char *);
+int str_to_int(char *s, int b);
 
 char *prog;
 
@@ -24,10 +25,12 @@ int main()
     test_assemble("INR 1 XOR 1");
     test_assemble("INR 5+3*2");
     test_assemble("INR (5+3)*2");
-    // test_assemble("INR 5+(3*2)");
-    // test_assemble("INR ((5+3)*2)");
-    // test_assemble("INR ((5+3)*2) AND (5+3*2)");
-    // test_assemble("INR ((5+3)*2) OR (5+3*2)");
+    test_assemble("INR 5+(3*2)");
+    test_assemble("INR ((5+3)*2)");
+    test_assemble("INR ((5+3)*2) AND (5+3*2)");
+    test_assemble("INR ((5+3)*2) OR (5+3*2)");
+    test_assemble("INR not 0");
+    test_assemble("INR not 0FFFFH");
 
     return 0;
 }
