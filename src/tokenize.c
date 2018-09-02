@@ -77,7 +77,7 @@ int get_statements(char srcbuf[], Statement statements[])
                     if (statementp->instr == NULL)
                         statementp->instr = mnem;
                     else {
-                        (++statementp)->instr = mnem;   // new statement
+                        (++statementp)->instr = mnem;    // new statement
                     }
 
                     // collect arguments

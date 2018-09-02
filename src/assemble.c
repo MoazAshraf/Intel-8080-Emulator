@@ -8,6 +8,8 @@ int ascii_to_code(char *);
 
 extern Oper binopers[];
 extern Oper unaopers[];
+extern char *deflabels[];
+extern const int N_DEFLABELS;
 
 // assemble: assemble an array of statements into Intel 8080 machine code,
 //  return length of output.
@@ -36,14 +38,56 @@ int assemble(const Statement statements[], int nstmnt, char outbuf[])
         pc = statements[i].pc;
 
         // evaluate arguments
-        int args[statements[i].args.nargs];
+        unsigned int args[statements[i].args.nargs];
 
         for (j = 0; j < statements[i].args.nargs; j++) {
             args[j] = evaluate(statements[i].args.args+j, labels, nlabels, pc);
-            printf("%d\n", args[j]);    // TODO: remove this
+            // printf("%d\n", args[j]);    // TODO: remove this
         }
 
-        // check arguments count and size
+        // convert to machine code
+        if (statements[i].instr) {
+            Instr *instr;
+            if (instr = get_instr(statements[i].instr, NULL, NULL)) {
+                if (outp-outbuf+instr->size >= MAX_PROG) {
+                    printerr("error: program size limit reached");
+                    exit(EXIT_FAILURE);
+                } else {
+                    // add opcode
+                    *outp++ = instr->opcode;
+
+                    // argument data
+                    unsigned int data;
+                    if (!instr->arg1)
+                        data = args[0];
+                    else if (!instr->arg2)
+                        data = args[1];
+
+                    if (instr->size == 2) {
+                        // add 1 byte argument data
+                        if (data > 0xff) {
+                            printerr("error: provided data argument for %s exceeds "
+                                "1 byte", instr->mnem);
+                            exit(EXIT_FAILURE);
+                        } else
+                            *outp++ = data & 0xff;
+                    } else if (instr->size == 3) {
+                        // add 2 byte argument data
+                        if (data > 0xff) {
+                            printerr("error: provided data argument for %s exceeds "
+                                "2 bytes", instr->mnem);
+                            exit(EXIT_FAILURE);
+                        } else {
+                            uint8_t lowdat = data & 0xff;
+                            uint8_t hidat = (data & 0xff00) >> 8;
+                            *outp++ = lowdat;
+                            *outp++ = hidat;
+                        }
+                    }
+                }
+            }
+        }
+
         // TODO: execute pseudo-instructions
         // TODO: macros
         // TODO: assemble instructions and data in outbuf

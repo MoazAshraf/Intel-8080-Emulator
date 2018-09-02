@@ -42,6 +42,13 @@ Pseudo pseudos[] = {
 
 const int N_PSEUDOS = sizeof pseudos / sizeof(Pseudo);
 
+// default labels
+char *deflabels[] = {
+    "B", "C", "D", "E", "H", "L", "M", "A", "SP"
+};
+
+const int N_DEFLABELS = sizeof deflabels / sizeof (char *);
+
 // instructions
 Instr instrs[] = {
     {0x00, 1, 0, "NOP"},

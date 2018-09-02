@@ -17,6 +17,8 @@ int main()
 {
     prog = "test";
 
+    test_assemble("NOP");
+    test_assemble("SHLD 0ffh");
     test_assemble("LXI -5, 2*3");
     test_assemble("INR 2*3-5+2/4");
     test_assemble("INR 1 OR 0");
@@ -59,7 +61,7 @@ void print_hexdump(char buf[], int size)
     for (int i = 0, pc = 0; i < size; i += 16) {
         printf("%08x ", i);
         for (pc = i; pc < i + 16 && pc < size; pc++) {
-            printf("%02x ", buf[i]);
+            printf("%02x ", buf[pc]);
         }
         putchar('\n');
     }
