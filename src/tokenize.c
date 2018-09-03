@@ -64,7 +64,7 @@ int get_statements(char srcbuf[], Statement statements[])
 
                 Instr *insinfo;
                 Pseudo *pseudoinfo;
-                if ((insinfo = get_instr(mnem, NULL, NULL)) != NULL) {
+                if (insinfo = get_instr(mnem, -1, -1)) {
 
                     // instructions don't take names
                     if (statementp->name && !statementp->instr) {
@@ -276,7 +276,7 @@ int get_argument(char buf[], Arg *arg)
             } else {  // collect nested instruction arguments
                 Instr *insinfo;
                 Args args;
-                insinfo = get_instr(tokp->str, NULL, NULL);
+                insinfo = get_instr(tokp->str, -1, -1);
                 bufp += get_arguments(bufp, insinfo->mnem, insinfo->nargs, &args);
                 if (args.nargs > 0) {
 
@@ -445,7 +445,7 @@ int get_token(char buf[], Token *tok)
                     printerr("error: illegal token %s", word);
                     exit(EXIT_FAILURE);
             }
-        } else if (get_instr(word, NULL, NULL)) // instruction
+        } else if (get_instr(word, -1, -1)) // instruction
             tok->type = TOK_INSTR;
         // TODO: pseudo-instructions
         else if (get_binoper(word))             // binary operator
@@ -523,7 +523,7 @@ char *validate_label(char *word, const Statement statements[], int nstmnt)
 
     // TODO: check if label is pseudo-instruction
     // check if label is instruction
-    if (get_instr(label, NULL, NULL) != NULL) {
+    if (get_instr(label, -1, -1)) {
         printerr("error: %s is a defined mnemonic; cannot be used as a label", label);
         exit(EXIT_FAILURE);
     }
@@ -547,17 +547,17 @@ extern const int N_INSTRS;
 
 // get_instr: returns the first instruction definition with the matching criteria
 //  or NULL if it doesn't exist.
-Instr *get_instr(char *mnem, char *arg1, char *arg2)
+Instr *get_instr(char *mnem, int arg1, int arg2)
 {
     Instr *instrp = instrs;
     while (instrp - instrs < N_INSTRS && instrp->mnem) {
         if (strcicmp(mnem, instrp->mnem) == 0)
-            if (arg1 == NULL)
+            if (instrp->arg1 == -1 || arg1 == -1)
                 return instrp;
-            else if (strcicmp(arg1, instrp->arg1) == 0)
-                if (arg2 == NULL)
+            else if (arg1 == instrp->arg1)
+                if (instrp->arg2 == -1 || arg2 == -1)
                     return instrp;
-                else if (strcicmp(arg2, instrp->arg2) == 0)
+                else if (arg2 == instrp->arg2)
                     return instrp;
         instrp++;
     }

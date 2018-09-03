@@ -8,15 +8,13 @@ int ascii_to_code(char *);
 
 extern Oper binopers[];
 extern Oper unaopers[];
-extern char *deflabels[];
-extern const int N_DEFLABELS;
 
 // assemble: assemble an array of statements into Intel 8080 machine code,
 //  return length of output.
-int assemble(const Statement statements[], int nstmnt, char outbuf[])
+int assemble(const Statement statements[], int nstmnt, uint8_t outbuf[])
 {
     int pc;                     // program counter value
-    char *outp;                 // pointer in outbuf
+    uint8_t *outp;              // pointer in outbuf
     Label labels[MAX_STMNTS];   // instruction labels
     int nlabels;
     int i, j;
@@ -38,17 +36,23 @@ int assemble(const Statement statements[], int nstmnt, char outbuf[])
         pc = statements[i].pc;
 
         // evaluate arguments
-        unsigned int args[statements[i].args.nargs];
+        int nargs = statements[i].args.nargs;
+        unsigned int args[nargs];
 
-        for (j = 0; j < statements[i].args.nargs; j++) {
+        for (j = 0; j < nargs; j++) {
             args[j] = evaluate(statements[i].args.args+j, labels, nlabels, pc);
             // printf("%d\n", args[j]);    // TODO: remove this
         }
 
         // convert to machine code
         if (statements[i].instr) {
+            
+            // get instruction info
             Instr *instr;
-            if (instr = get_instr(statements[i].instr, NULL, NULL)) {
+            int arg1 = (nargs > 0) ? args[0] : -1;
+            int arg2 = (nargs > 1) ? args[1] : -1;
+            
+            if (instr = get_instr(statements[i].instr, arg1, arg2)) {
                 if (outp-outbuf+instr->size >= MAX_PROG) {
                     printerr("error: program size limit reached");
                     exit(EXIT_FAILURE);
@@ -58,9 +62,9 @@ int assemble(const Statement statements[], int nstmnt, char outbuf[])
 
                     // argument data
                     unsigned int data;
-                    if (!instr->arg1)
+                    if (instr->arg1 == -1)
                         data = args[0];
-                    else if (!instr->arg2)
+                    else if (instr->arg2 == -1)
                         data = args[1];
 
                     if (instr->size == 2) {
@@ -73,7 +77,7 @@ int assemble(const Statement statements[], int nstmnt, char outbuf[])
                             *outp++ = data & 0xff;
                     } else if (instr->size == 3) {
                         // add 2 byte argument data
-                        if (data > 0xff) {
+                        if (data > 0xffff) {
                             printerr("error: provided data argument for %s exceeds "
                                 "2 bytes", instr->mnem);
                             exit(EXIT_FAILURE);
@@ -85,6 +89,9 @@ int assemble(const Statement statements[], int nstmnt, char outbuf[])
                         }
                     }
                 }
+            } else {
+                printerr("error: invalid instruction");
+                exit(EXIT_FAILURE);
             }
         }
 

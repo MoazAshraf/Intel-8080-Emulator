@@ -49,8 +49,8 @@ typedef struct Instr {
     int size;       // equivalent machine code size in bytes
     int nargs;      // number of arguments
     char *mnem;     // mnemonic
-    char *arg1;     // first argument value
-    char *arg2;     // second argument value; NULL if doesn't affect opcode
+    int arg1;       // first argument value
+    int arg2;       // second argument value; -1 if doesn't affect opcode
 } Instr;
 
 // pseudo-instruction definition
@@ -111,7 +111,7 @@ typedef struct ExprNode {
 // function declarations
 void printerr(char *, ...);
 int strcicmp(const char *, const char *);
-Instr *get_instr(char *, char *, char *);
+Instr *get_instr(char *, int, int);
 Pseudo *get_pseudo(char *);
 Oper *get_unaoper(char *);
 Oper *get_binoper(char *);

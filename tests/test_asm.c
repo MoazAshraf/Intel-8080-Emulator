@@ -18,28 +18,32 @@ int main()
     prog = "test";
 
     test_assemble("NOP");
-    test_assemble("SHLD 0ffh");
-    test_assemble("LXI -5, 2*3");
+    test_assemble("SHLD 0a6ffh");
+    test_assemble("LXI 0, 2*3");
+    test_assemble("LXI 2, 2*3");
     test_assemble("INR 2*3-5+2/4");
     test_assemble("INR 1 OR 0");
     test_assemble("INR 1 AND 0");
     test_assemble("INR 1 AND 1");
     test_assemble("INR 1 XOR 1");
-    test_assemble("INR 5+3*2");
-    test_assemble("INR (5+3)*2");
-    test_assemble("INR 5+(3*2)");
-    test_assemble("INR ((5+3)*2)");
     test_assemble("INR ((5+3)*2) AND (5+3*2)");
-    test_assemble("INR ((5+3)*2) OR (5+3*2)");
-    test_assemble("INR not 0");
     test_assemble("INR not 0FFFFH");
+
+    // errors
+    // test_assemble("LXI -5, 2*3");
+    // test_assemble("INR 5+3*2");
+    // test_assemble("INR (5+3)*2");
+    // test_assemble("INR 5+(3*2)");
+    // test_assemble("INR ((5+3)*2)");
+    // test_assemble("INR ((5+3)*2) OR (5+3*2)");
+    // test_assemble("INR not 0");
 
     return 0;
 }
 
 int get_statements(char *, Statement *);
 int assemble(const Statement *, int, char *);
-void print_hexdump(char *, int);
+void print_hexdump(uint8_t *, int);
 
 void test_assemble(char *s)
 {
@@ -55,7 +59,7 @@ void test_assemble(char *s)
     print_hexdump(outbuf, outsize);
 }
 
-void print_hexdump(char buf[], int size)
+void print_hexdump(uint8_t buf[], int size)
 {
     int pc;
     for (int i = 0, pc = 0; i < size; i += 16) {
