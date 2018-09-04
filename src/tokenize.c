@@ -552,10 +552,10 @@ Instr *get_instr(char *mnem, int arg1, int arg2)
     Instr *instrp = instrs;
     while (instrp - instrs < N_INSTRS && instrp->mnem) {
         if (strcicmp(mnem, instrp->mnem) == 0)
-            if (instrp->arg1 == -1 || arg1 == -1)
+            if (instrp->nargs == 0 || instrp->arg1 == -1 || arg1 == -1)
                 return instrp;
             else if (arg1 == instrp->arg1)
-                if (instrp->arg2 == -1 || arg2 == -1)
+                if (instrp->nargs == 1 || instrp->arg2 == -1 || arg2 == -1)
                     return instrp;
                 else if (arg2 == instrp->arg2)
                     return instrp;
