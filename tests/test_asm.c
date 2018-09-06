@@ -17,6 +17,14 @@ int main()
 {
     prog = "test";
 
+    // pseudo-instructions
+    test_assemble("DS 5");
+    test_assemble("DB 12, 6, 'A', '9'-'0', 'B'");
+    test_assemble("DW 01FAH, 6, 'AB', '9'+256, 'AA'");
+    test_assemble("NOP NOP INR 0 END NOP NOP INR 0");
+    test_assemble("NOP NOP INR 0 ORG 0FFH NOP NOP inr 0 ORG 0 SHLD 0A6FFH");
+
+    // instructions
     test_assemble("NOP");
     test_assemble("SHLD 0a6ffh");
     test_assemble("LXI 0, 2*3");
@@ -30,6 +38,7 @@ int main()
     test_assemble("INR not 0FFFFH");
 
     // errors
+    // test_assemble("DB");
     // test_assemble("LXI -5, 2*3");
     // test_assemble("INR 5+3*2");
     // test_assemble("INR (5+3)*2");
@@ -69,4 +78,5 @@ void print_hexdump(uint8_t buf[], int size)
         }
         putchar('\n');
     }
+    putchar('\n');
 }

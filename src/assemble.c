@@ -8,6 +8,7 @@ int ascii_to_code(char *);
 
 extern Oper binopers[];
 extern Oper unaopers[];
+extern Pseudo pseudos[];
 
 // assemble: assemble an array of statements into Intel 8080 machine code,
 //  return length of output.
@@ -18,6 +19,7 @@ int assemble(const Statement statements[], int nstmnt, uint8_t outbuf[])
     Label labels[MAX_STMNTS];   // instruction labels
     int nlabels;
     int i, j;
+    int progsize;               // program size
 
     // collect instruction labels
     for (i = 0, j = 0; i < nstmnt; i++) { 
@@ -27,8 +29,8 @@ int assemble(const Statement statements[], int nstmnt, uint8_t outbuf[])
         }
     }
     nlabels = j;
-
     outp = outbuf;
+    progsize = 0;
 
     // iterate over all statements and assemble
     for (i = 0; i < nstmnt; i++) {
@@ -47,12 +49,13 @@ int assemble(const Statement statements[], int nstmnt, uint8_t outbuf[])
         // convert to machine code
         if (statements[i].instr) {
             
-            // get instruction info
             Instr *instr;
+            Pseudo *pseudo;
             int arg1 = (nargs > 0) ? args[0] : -1;
             int arg2 = (nargs > 1) ? args[1] : -1;
             
             if (instr = get_instr(statements[i].instr, arg1, arg2)) {
+                // instructions
                 if (outp-outbuf+instr->size >= MAX_PROG) {
                     printerr("error: program size limit reached");
                     exit(EXIT_FAILURE);
@@ -89,10 +92,72 @@ int assemble(const Statement statements[], int nstmnt, uint8_t outbuf[])
                         }
                     }
                 }
+            } else if (pseudo = get_pseudo(statements[i].instr)) {
+                // pseudo-instructions
+                
+                if (pseudo->nargs < 3 && nargs != pseudo->nargs) {
+                    printerr("error: %s requires %d arguments. "
+                        "%d provided", pseudo->mnem, pseudo->nargs, nargs);
+                    exit(EXIT_FAILURE);
+                } else if (pseudo->nargs == 3 && nargs == 0) {
+                    printerr("error: %s takes a list of arguments. "
+                        "no arguments provided", pseudo->mnem);
+                    exit(EXIT_FAILURE);
+                }
+
+                if (pseudo == pseudos+0) {          // DB: Define bytes
+                    for (j = 0; j < nargs; j++) {
+                        if (args[j] > 0xff) {
+                            printerr("error: provided data argument for DB "
+                                "exceeds 1 bytes");
+                            exit(EXIT_FAILURE);
+                        }
+                        *outp++ = args[j];
+                    }
+                } else if (pseudo == pseudos+1) {   // DW: Define words
+                    for (j = 0; j < nargs; j++) {
+                        if (args[j] > 0xffff) {
+                            printerr("error: provided data argument for DW "
+                                "exceeds 2 bytes");
+                            exit(EXIT_FAILURE);
+                        }
+                        uint8_t lowdat = args[j] & 0xff;
+                        uint8_t hidat = (args[j] & 0xff00) >> 8;
+                        *outp++ = lowdat;
+                        *outp++ = hidat;
+                    }
+                } else if (pseudo == pseudos+2) {   // DS: Define storage
+                    if (outp-outbuf+args[0] >= MAX_PROG) {
+                        printerr("error: not enough program memory for DS");
+                        exit(EXIT_FAILURE);
+                    }
+                    outp += args[0];
+                } else if (pseudo == pseudos+3) {   // ORG: Origin
+                    if (args[0] < MAX_PROG)
+                        outp = outbuf + args[0];
+                } else if (pseudo == pseudos+4) {   // TODO: EQU
+                    
+                } else if (pseudo == pseudos+5) {   // TODO: SET
+                    
+                } else if (pseudo == pseudos+6) {   // END: End of assembly
+                    break;
+                } else if (pseudo == pseudos+7) {   // TODO: IF
+                    
+                } else if (pseudo == pseudos+8) {   // TODO: ENDIF
+                    
+                } else if (pseudo == pseudos+9) {   // TODO: MACRO
+                    
+                } else if (pseudo == pseudos+10) {  // TODO: ENDM
+                    
+                }
+
             } else {
                 printerr("error: invalid instruction");
                 exit(EXIT_FAILURE);
             }
+
+            if (outp-outbuf > progsize)
+                progsize = outp-outbuf;
         }
 
         // TODO: execute pseudo-instructions
@@ -100,7 +165,7 @@ int assemble(const Statement statements[], int nstmnt, uint8_t outbuf[])
         // TODO: assemble instructions and data in outbuf
     }
     
-    return outp-outbuf;
+    return progsize;
 }
 
 int eval_list(ExprNode *);
@@ -179,6 +244,7 @@ int evaluate(const Arg *arg, const Label labels[], int nlabels, int pc)
                     val = pc;
                     break;
                 case TOK_ASCII:
+                    // TODO: ASCII lists
                     val = ascii_to_code(arg->toks[i].str);
                     break;
                 case TOK_LABEL:

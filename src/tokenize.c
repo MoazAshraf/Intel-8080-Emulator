@@ -160,8 +160,8 @@ int get_arguments(char buf[], char *mnem, int nargs, Args *args)
                 exit(EXIT_FAILURE);
             } else {
                 if (nargs == 3 && argp-arg_list == 0) {
-                    printerr("error: %s takes a list of arguments. %d provided.",
-                        mnem, argp-arg_list);
+                    printerr("error: %s takes a list of arguments. "
+                        "no arguments provided.", mnem);
                     exit(EXIT_FAILURE);
                 } else {
                     argp++;
