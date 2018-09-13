@@ -52,6 +52,7 @@ const int N_PSEUDOS = sizeof pseudos / sizeof(Pseudo);
 #define M   6
 #define A   7
 #define SP  8
+#define PSW 9
 
 // instructions
 Instr instrs[] = {
@@ -262,7 +263,55 @@ Instr instrs[] = {
     {0xcc, 3, 1, "CZ",  -1},
     {0xcd, 3, 1, "CALL",-1},
     {0xce, 2, 1, "ACI", -1},
-    {0xcf, 1, 1, "RST",  1}
+    {0xcf, 1, 1, "RST",  1},
+    {0xd0, 1, 0, "RNC"},
+    {0xd1, 1, 1, "POP",  D},
+    {0xd2, 3, 1, "JNC", -1},
+    {0xd3, 2, 1, "OUT", -1},
+    {0xd4, 3, 1, "CNC", -1},
+    {0xd5, 1, 1, "PUSH", D},
+    {0xd6, 2, 1, "SUI", -1},
+    {0xd7, 1, 1, "RST",  2},
+    {0xd8, 1, 0, "RC"},
+    // 0xd9
+    {0xda, 3, 1, "JC",  -1},
+    {0xdb, 2, 1, "IN",  -1},
+    {0xdc, 3, 1, "CC",  -1},
+    // 0xdd
+    {0xde, 2, 1, "SBI", -1},
+    {0xdf, 1, 1, "RST",  3},
+    {0xe0, 1, 0, "RPO"},
+    {0xe1, 1, 1, "POP",  H},
+    {0xe2, 3, 1, "JPO", -1},
+    {0xe3, 1, 0, "XTHL"},
+    {0xe4, 3, 1, "CPO", -1},
+    {0xe5, 1, 1, "PUSH", H},
+    {0xe6, 2, 1, "ANI", -1},
+    {0xe7, 1, 1, "RST",  4},
+    {0xe8, 1, 0, "RPE"},
+    {0xe9, 1, 0, "PCHL"},
+    {0xea, 3, 1, "JPE", -1},
+    {0xeb, 1, 0, "XCHG"},
+    {0xec, 3, 1, "CPE", -1},
+    // 0xed
+    {0xee, 2, 1, "XRI", -1},
+    {0xef, 1, 1, "RST",  5},
+    {0xf0, 1, 0, "RP"},
+    {0xf1, 1, 1, "POP", PSW},
+    {0xf2, 3, 1, "JP",  -1},
+    {0xf3, 1, 0, "DI"},
+    {0xf4, 3, 1, "CP",  -1},
+    {0xf5, 1, 1, "PUSH",PSW},
+    {0xf6, 2, 1, "ORI", -1},
+    {0xf7, 1, 1, "RST",  6},
+    {0xf8, 1, 0, "RM"},
+    {0xf9, 1, 0, "SPHL"},
+    {0xfa, 3, 1, "JM",  -1},
+    {0xfb, 1, 0, "EI"},
+    {0xfc, 3, 1, "CM",  -1},
+    // 0xfd
+    {0xfe, 2, 1, "CPI", -1},
+    {0xff, 1, 1, "RST",  7}
 };
 
 const int N_INSTRS = sizeof instrs / sizeof(Instr);
