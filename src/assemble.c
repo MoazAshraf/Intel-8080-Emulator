@@ -9,6 +9,8 @@ int ascii_to_code(char *);
 extern Oper binopers[];
 extern Oper unaopers[];
 extern Pseudo pseudos[];
+extern Label deflabels[];
+extern const int N_DEFLABELS;
 
 // assemble: assemble an array of statements into Intel 8080 machine code,
 //  return length of output.
@@ -16,19 +18,33 @@ int assemble(const Statement statements[], int nstmnt, uint8_t outbuf[])
 {
     int pc;                     // program counter value
     uint8_t *outp;              // pointer in outbuf
-    Label labels[MAX_STMNTS];   // instruction labels
+    Label labels[MAX_LABELS];   // instruction labels
     int nlabels;
     int i, j;
     int progsize;               // program size
 
+    // add default labels
+    for (j = 0; j < N_DEFLABELS; j++) {
+        labels[j].key = deflabels[j].key;
+        labels[j].value = deflabels[j].value;
+        labels[j].immutable = deflabels[j].immutable;
+    }
+    nlabels = N_DEFLABELS;
+
     // collect instruction labels
-    for (i = 0, j = 0; i < nstmnt; i++) { 
+    for (i = 0; i < nstmnt; i++) {
         if (statements[i].label) {
-            labels[j].key = statements[i].label;
-            labels[j++].value = statements[i].pc;
+            for (j = 0; j < nlabels; j++)
+                if (strcicmp(labels[j].key, statements[i].label) == 0) {
+                    printerr("error: label %s is predefined", labels[j].key);
+                    exit(EXIT_FAILURE);
+                }
+            labels[nlabels].key = statements[i].label;
+            labels[nlabels].value = statements[i].pc;
+            labels[nlabels++].immutable = 1;
         }
     }
-    nlabels = j;
+
     outp = outbuf;
     progsize = 0;
 
@@ -135,10 +151,32 @@ int assemble(const Statement statements[], int nstmnt, uint8_t outbuf[])
                 } else if (pseudo == pseudos+3) {   // ORG: Origin
                     if (args[0] < MAX_PROG)
                         outp = outbuf + args[0];
+                    else {
+                        printerr("error: ORG argument exceeds maximum program memory");
+                        exit(EXIT_FAILURE);
+                    }
                 } else if (pseudo == pseudos+4) {   // TODO: EQU
-                    
+                    for (j = 0; j < nlabels; j++)
+                        if (strcicmp(labels[j].key, statements[i].name) == 0) {
+                            printerr("error: EQU cannot define an existing label");
+                            exit(EXIT_FAILURE);
+                        }
+
+                    labels[nlabels].key = statements[i].name;
+                    labels[nlabels].value = args[0];
+                    labels[nlabels++].immutable = 1;
                 } else if (pseudo == pseudos+5) {   // TODO: SET
+                    for (j = 0; j < nlabels; j++)
+                        if (strcicmp(labels[j].key, statements[i].name) == 0)
+                            if (labels[j].immutable) {
+                                printerr("error: SET cannot change immutable labels");
+                                exit(EXIT_FAILURE);
+                            } else
+                                labels[j].value = args[0];
                     
+                    labels[nlabels].key = statements[i].name;
+                    labels[nlabels].value = args[0];
+                    labels[nlabels++].immutable = 0;
                 } else if (pseudo == pseudos+6) {   // END: End of assembly
                     break;
                 } else if (pseudo == pseudos+7) {   // TODO: IF
@@ -152,7 +190,7 @@ int assemble(const Statement statements[], int nstmnt, uint8_t outbuf[])
                 }
 
             } else {
-                printerr("error: invalid instruction");
+                printerr("error: invalid instruction or arguments");
                 exit(EXIT_FAILURE);
             }
 
@@ -253,6 +291,10 @@ int evaluate(const Arg *arg, const Label labels[], int nlabels, int pc)
                             val = labels[j].value;
                             break;
                         }
+                    if (j == nlabels) {
+                        printerr("error: label %s is undefined", arg->toks[i].str);
+                        exit(EXIT_FAILURE);
+                    }
                     break;
             }
             curr->value = val;

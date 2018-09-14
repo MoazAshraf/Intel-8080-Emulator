@@ -35,6 +35,7 @@ int main()
     test_statements("oblab: ORG 14H");
     test_statements("oblab: name EQU 14H");
     test_statements("oblab: name SET val");
+    test_statements("oblab: B SET 0 \n C SET 1");
     test_statements("oblab: END");
     test_statements("oblab: IF 1 ENDIF");
     test_statements("oblab: name MACRO NOP ENDM");

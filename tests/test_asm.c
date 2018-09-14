@@ -17,6 +17,10 @@ int main()
 {
     prog = "test";
 
+    test_assemble("B SET 0  INX B");
+    test_assemble("B SET 0  B SET 2  INX B");
+    test_assemble("BLA EQU 0  INX BLA");
+
     // pseudo-instructions
     test_assemble("DS 5");
     test_assemble("DB 12, 6, 'A', '9'-'0', 'B'");
@@ -46,6 +50,8 @@ int main()
     // test_assemble("INR ((5+3)*2)");
     // test_assemble("INR ((5+3)*2) OR (5+3*2)");
     // test_assemble("INR not 0");
+    // test_assemble("B EQU 0  B EQU 2  INX B");
+    // test_assemble("B EQU 0  B SET 2  INX B");
 
     return 0;
 }

@@ -113,8 +113,12 @@ int get_statements(char srcbuf[], Statement statements[])
                     // store pc
                     statementp->pc = pc;
 
+                } else if (statementp->instr != NULL) {
+                    (++statementp)->name = mnem;
+                    statementp->pc = pc;
                 } else if (statementp->name == NULL) {
                     statementp->name = mnem;
+                    statementp->pc = pc;
                 } else {
                     printerr("error: '%s' is not a defined mnemonic", statementp->name);
                     exit(EXIT_FAILURE);

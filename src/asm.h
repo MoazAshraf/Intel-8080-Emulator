@@ -70,6 +70,7 @@ typedef struct Oper {
 typedef struct Label {
     char *key;
     uint16_t value;
+    int immutable;
 } Label;
 
 typedef enum ExprNodeType {
@@ -86,6 +87,7 @@ typedef struct ExprNode {
 } ExprNode;
 
 #define MAX_STMNTS  0x20000 // maximum number of program statements
+#define MAX_LABELS  0x40000 // maximum number of labels
 #define MAX_WORD    256     // maximum length of a word
 #define MAX_LABEL   5       // maximum label length
 #define MAX_TOKENS  256     // maximum number of argument expression tokens

@@ -54,6 +54,22 @@ const int N_PSEUDOS = sizeof pseudos / sizeof(Pseudo);
 #define SP  8
 #define PSW 9
 
+// default labels
+Label deflabels[] = {
+    {"B",   B,   0},
+    {"C",   C,   0},
+    {"D",   D,   0},
+    {"E",   E,   0},
+    {"H",   H,   0},
+    {"L",   L,   0},
+    {"M",   M,   0},
+    {"A",   A,   0},
+    {"SP",  SP,  0},
+    {"PSW", PSW, 0},
+};
+
+const int N_DEFLABELS = sizeof deflabels / sizeof(Label);
+
 // instructions
 Instr instrs[] = {
     {0x00, 1, 0, "NOP"},
