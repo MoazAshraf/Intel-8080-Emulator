@@ -1,6 +1,6 @@
 // test_arg.c: tests for get_argument() in tokenize.c
 //
-// Copyright (c) 2018 Moaz Ashraf
+// Copyright (c) 2020 Moaz Ashraf
 // Licensed under MIT License
 // Refer to LICENSE file
 

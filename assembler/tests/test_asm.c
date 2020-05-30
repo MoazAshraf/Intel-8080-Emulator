@@ -1,6 +1,6 @@
 // test_asm.c: tests for assemble() in assemble.c
 //
-// Copyright (c) 2018 Moaz Ashraf
+// Copyright (c) 2020 Moaz Ashraf
 // Licensed under MIT License
 // Refer to LICENSE file
 
@@ -17,6 +17,7 @@ int main()
 {
     prog = "test";
 
+    test_assemble("IF 1 INX 0 ENDIF");
     test_assemble("B SET 0  INX B");
     test_assemble("B SET 0  B SET 2  INX B");
     test_assemble("BLA EQU 0  INX BLA");
@@ -57,7 +58,7 @@ int main()
 }
 
 int get_statements(char *, Statement *);
-int assemble(const Statement *, int, char *);
+int assemble(Statement *, int, char *);
 void print_hexdump(uint8_t *, int);
 
 void test_assemble(char *s)

@@ -1,6 +1,6 @@
-// mnemonics.c: Intel 8080 assembly mnemonic list definitions
+// mnemonics.c: assembly mnemonic list definitions
 //
-// Copyright (c) 2018 Moaz Ashraf
+// Copyright (c) 2020 Moaz Ashraf
 // Licensed under MIT License
 // Refer to LICENSE file
 

@@ -1,3 +1,9 @@
+// assemble.c: assembles program statements into machine code
+//
+// Copyright (c) 2020 Moaz Ashraf
+// Licensed under MIT License
+// Refer to LICENSE file
+
 #include <stdio.h>  // TODO: remove this
 #include <stdlib.h>
 #include "asm.h"
@@ -14,7 +20,7 @@ extern const int N_DEFLABELS;
 
 // assemble: assemble an array of statements into Intel 8080 machine code,
 //  return length of output.
-int assemble(const Statement statements[], int nstmnt, uint8_t outbuf[])
+int assemble(Statement statements[], int nstmnt, uint8_t outbuf[])
 {
     int pc;                     // program counter value
     uint8_t *outp;              // pointer in outbuf
@@ -44,7 +50,7 @@ int assemble(const Statement statements[], int nstmnt, uint8_t outbuf[])
             labels[nlabels++].immutable = 1;
         }
     }
-
+    
     outp = outbuf;
     progsize = 0;
 
@@ -155,7 +161,7 @@ int assemble(const Statement statements[], int nstmnt, uint8_t outbuf[])
                         printerr("error: ORG argument exceeds maximum program memory");
                         exit(EXIT_FAILURE);
                     }
-                } else if (pseudo == pseudos+4) {   // TODO: EQU
+                } else if (pseudo == pseudos+4) {   // EQU: Equate name
                     for (j = 0; j < nlabels; j++)
                         if (strcicmp(labels[j].key, statements[i].name) == 0) {
                             printerr("error: EQU cannot define an existing label");
@@ -165,7 +171,7 @@ int assemble(const Statement statements[], int nstmnt, uint8_t outbuf[])
                     labels[nlabels].key = statements[i].name;
                     labels[nlabels].value = args[0];
                     labels[nlabels++].immutable = 1;
-                } else if (pseudo == pseudos+5) {   // TODO: SET
+                } else if (pseudo == pseudos+5) {   // SET: Set name
                     for (j = 0; j < nlabels; j++)
                         if (strcicmp(labels[j].key, statements[i].name) == 0)
                             if (labels[j].immutable) {
@@ -179,10 +185,6 @@ int assemble(const Statement statements[], int nstmnt, uint8_t outbuf[])
                     labels[nlabels++].immutable = 0;
                 } else if (pseudo == pseudos+6) {   // END: End of assembly
                     break;
-                } else if (pseudo == pseudos+7) {   // TODO: IF
-                    
-                } else if (pseudo == pseudos+8) {   // TODO: ENDIF
-                    
                 } else if (pseudo == pseudos+9) {   // TODO: MACRO
                     
                 } else if (pseudo == pseudos+10) {  // TODO: ENDM

@@ -1,6 +1,6 @@
-// asm.h: Intel 8080 Assembler header file
+// asm.h: assembler header file, contains declarations for all assembler source files
 //
-// Copyright (c) 2018 Moaz Ashraf
+// Copyright (c) 2020 Moaz Ashraf
 // Licensed under MIT License
 // Refer to LICENSE file
 

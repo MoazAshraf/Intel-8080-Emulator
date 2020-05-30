@@ -1,6 +1,6 @@
 // loadfiles.c: loading, concatenating and buffering input files
 //
-// Copyright (c) 2018 Moaz Ashraf
+// Copyright (c) 2020 Moaz Ashraf
 // Licensed under MIT License
 // Refer to LICENSE file
 
