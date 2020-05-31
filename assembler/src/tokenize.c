@@ -21,7 +21,7 @@ char *validate_label(char *, const Statement *, int);
 int get_statements(char srcbuf[], Statement statements[])
 {
     char *srcp = srcbuf;                // pointer in srcbuf
-    Statement *statementp = statements; // pointer in statements
+    Statement *statementp = statements; // pointer in statements array
     uint16_t pc;                        // program counter
 
     pc = 0;
