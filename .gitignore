@@ -1,3 +1,4 @@
 *.o
-*/tests/out/
+*/dist/
+*/tests/check_tests
 .vscode/

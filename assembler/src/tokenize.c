@@ -355,7 +355,7 @@ int get_argument(char buf[], Arg *arg)
     return bufp-buf;
 }
 
-// get_token: collects an argument expression token, returns #characters read.
+// get_token: collects an argument expression token, returns no. of characters read.
 int get_token(char buf[], Token *tok)
 {
     char *bufp; // pointer in buf
