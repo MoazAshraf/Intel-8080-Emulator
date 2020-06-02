@@ -1,8 +1,4 @@
 // errors.c: printing error messages
-//
-// Copyright (c) 2020 Moaz Ashraf
-// Licensed under MIT License
-// Refer to LICENSE file
 
 #include <stdarg.h>
 #include <stdio.h>

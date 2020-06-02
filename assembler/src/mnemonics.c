@@ -1,8 +1,4 @@
 // mnemonics.c: assembly mnemonic list definitions
-//
-// Copyright (c) 2020 Moaz Ashraf
-// Licensed under MIT License
-// Refer to LICENSE file
 
 #include <stdlib.h>
 #include "asm.h"

@@ -1,8 +1,4 @@
 // tokenize.c: assembler lexical analysis, syntax checking and program statement collection
-//
-// Copyright (c) 2020 Moaz Ashraf
-// Licensed under MIT License
-// Refer to LICENSE file
 
 #include <stdio.h>
 #include <stdlib.h>

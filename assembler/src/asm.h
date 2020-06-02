@@ -1,8 +1,4 @@
 // asm.h: assembler header file, contains declarations for all assembler source files
-//
-// Copyright (c) 2020 Moaz Ashraf
-// Licensed under MIT License
-// Refer to LICENSE file
 
 #ifndef ASM_H
 #define ASM_H

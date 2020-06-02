@@ -1,8 +1,4 @@
 // assemble.c: assembles program statements into machine code
-//
-// Copyright (c) 2020 Moaz Ashraf
-// Licensed under MIT License
-// Refer to LICENSE file
 
 #include <stdio.h>  // TODO: remove this
 #include <stdlib.h>
