@@ -1,6 +1,6 @@
 // assemble.c: assembles program statements into machine code
 
-#include <stdio.h>  // TODO: remove this
+#include <stdio.h>
 #include <stdlib.h>
 #include "asm.h"
 
@@ -38,7 +38,7 @@ int assemble(Statement statements[], int nstmnt, uint8_t outbuf[])
         if (statements[i].label) {
             for (j = 0; j < nlabels; j++)
                 if (strcicmp(labels[j].key, statements[i].label) == 0) {
-                    printerr("error: label %s is predefined", labels[j].key);
+                    fprintf(stderr, "error: label %s is predefined\n", labels[j].key);
                     exit(EXIT_FAILURE);
                 }
             labels[nlabels].key = statements[i].label;
@@ -75,7 +75,7 @@ int assemble(Statement statements[], int nstmnt, uint8_t outbuf[])
             if (instr = get_instr(statements[i].instr, arg1, arg2)) {
                 // instructions
                 if (outp-outbuf+instr->size >= MAX_PROG) {
-                    printerr("error: program size limit reached");
+                    fprintf(stderr, "error: program size limit reached");
                     exit(EXIT_FAILURE);
                 } else {
                     // add opcode
@@ -91,7 +91,7 @@ int assemble(Statement statements[], int nstmnt, uint8_t outbuf[])
                     if (instr->size == 2) {
                         // add 1 byte argument data
                         if (data > 0xff) {
-                            printerr("error: provided data argument for %s exceeds "
+                            fprintf(stderr, "error: provided data argument for %s exceeds "
                                 "1 byte", instr->mnem);
                             exit(EXIT_FAILURE);
                         } else
@@ -99,7 +99,7 @@ int assemble(Statement statements[], int nstmnt, uint8_t outbuf[])
                     } else if (instr->size == 3) {
                         // add 2 byte argument data
                         if (data > 0xffff) {
-                            printerr("error: provided data argument for %s exceeds "
+                            fprintf(stderr, "error: provided data argument for %s exceeds "
                                 "2 bytes", instr->mnem);
                             exit(EXIT_FAILURE);
                         } else {
@@ -114,11 +114,11 @@ int assemble(Statement statements[], int nstmnt, uint8_t outbuf[])
                 // pseudo-instructions
                 
                 if (pseudo->nargs < 3 && nargs != pseudo->nargs) {
-                    printerr("error: %s requires %d arguments. "
+                    fprintf(stderr, "error: %s requires %d arguments. "
                         "%d provided", pseudo->mnem, pseudo->nargs, nargs);
                     exit(EXIT_FAILURE);
                 } else if (pseudo->nargs == 3 && nargs == 0) {
-                    printerr("error: %s takes a list of arguments. "
+                    fprintf(stderr, "error: %s takes a list of arguments. "
                         "no arguments provided", pseudo->mnem);
                     exit(EXIT_FAILURE);
                 }
@@ -126,7 +126,7 @@ int assemble(Statement statements[], int nstmnt, uint8_t outbuf[])
                 if (pseudo == pseudos+0) {          // DB: Define bytes
                     for (j = 0; j < nargs; j++) {
                         if (args[j] > 0xff) {
-                            printerr("error: provided data argument for DB "
+                            fprintf(stderr, "error: provided data argument for DB "
                                 "exceeds 1 bytes");
                             exit(EXIT_FAILURE);
                         }
@@ -135,7 +135,7 @@ int assemble(Statement statements[], int nstmnt, uint8_t outbuf[])
                 } else if (pseudo == pseudos+1) {   // DW: Define words
                     for (j = 0; j < nargs; j++) {
                         if (args[j] > 0xffff) {
-                            printerr("error: provided data argument for DW "
+                            fprintf(stderr, "error: provided data argument for DW "
                                 "exceeds 2 bytes");
                             exit(EXIT_FAILURE);
                         }
@@ -146,7 +146,7 @@ int assemble(Statement statements[], int nstmnt, uint8_t outbuf[])
                     }
                 } else if (pseudo == pseudos+2) {   // DS: Define storage
                     if (outp-outbuf+args[0] >= MAX_PROG) {
-                        printerr("error: not enough program memory for DS");
+                        fprintf(stderr, "error: not enough program memory for DS");
                         exit(EXIT_FAILURE);
                     }
                     outp += args[0];
@@ -154,13 +154,13 @@ int assemble(Statement statements[], int nstmnt, uint8_t outbuf[])
                     if (args[0] < MAX_PROG)
                         outp = outbuf + args[0];
                     else {
-                        printerr("error: ORG argument exceeds maximum program memory");
+                        fprintf(stderr, "error: ORG argument exceeds maximum program memory");
                         exit(EXIT_FAILURE);
                     }
                 } else if (pseudo == pseudos+4) {   // EQU: Equate name
                     for (j = 0; j < nlabels; j++)
                         if (strcicmp(labels[j].key, statements[i].name) == 0) {
-                            printerr("error: EQU cannot define an existing label");
+                            fprintf(stderr, "error: EQU cannot define an existing label");
                             exit(EXIT_FAILURE);
                         }
 
@@ -171,7 +171,7 @@ int assemble(Statement statements[], int nstmnt, uint8_t outbuf[])
                     for (j = 0; j < nlabels; j++)
                         if (strcicmp(labels[j].key, statements[i].name) == 0)
                             if (labels[j].immutable) {
-                                printerr("error: SET cannot change immutable labels");
+                                fprintf(stderr, "error: SET cannot change immutable labels");
                                 exit(EXIT_FAILURE);
                             } else
                                 labels[j].value = args[0];
@@ -188,7 +188,7 @@ int assemble(Statement statements[], int nstmnt, uint8_t outbuf[])
                 }
 
             } else {
-                printerr("error: invalid instruction or arguments");
+                fprintf(stderr, "error: invalid instruction or arguments");
                 exit(EXIT_FAILURE);
             }
 
@@ -248,7 +248,7 @@ int evaluate(const Arg *arg, const Label labels[], int nlabels, int pc)
                         curr->oper = NULL;
                         curr->type = ENT_VAL;
                     } else {
-                        printerr("error: missing closing )");  // TODO: remove this
+                        fprintf(stderr, "error: missing closing )");  // TODO: remove this
                         exit(EXIT_FAILURE);
                     }
                 }
@@ -290,7 +290,7 @@ int evaluate(const Arg *arg, const Label labels[], int nlabels, int pc)
                             break;
                         }
                     if (j == nlabels) {
-                        printerr("error: label %s is undefined", arg->toks[i].str);
+                        fprintf(stderr, "error: label %s is undefined", arg->toks[i].str);
                         exit(EXIT_FAILURE);
                     }
                     break;
@@ -337,7 +337,7 @@ int eval_list(ExprNode *head)
                     if (curr->prev->oper)
                         prev_oper = curr->prev->oper;
                     else {
-                        printerr("error: expected operator before operand in "
+                        fprintf(stderr, "error: expected operator before operand in "
                             "expression list");
                         exit(EXIT_FAILURE);
                     }
@@ -346,7 +346,7 @@ int eval_list(ExprNode *head)
                     if (curr->next->oper)
                         next_oper = curr->next->oper;
                     else {
-                        printerr("error: expected operator after operand in "
+                        fprintf(stderr, "error: expected operator after operand in "
                             "expression list");
                         exit(EXIT_FAILURE);
                     }
@@ -373,7 +373,7 @@ int eval_list(ExprNode *head)
                                 if (curr->next)
                                     curr->next->prev = curr->prev->prev;
                             } else {
-                                printerr("error: expected operand before operator in "
+                                fprintf(stderr, "error: expected operand before operator in "
                                     "expression list");
                                 exit(EXIT_FAILURE);
                             }

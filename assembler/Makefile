@@ -15,8 +15,7 @@ testsdist = $(testsdir)/check_tests
 OBJS =
 OBJS += $(srcdir)/asm.o
 OBJS += $(srcdir)/assemble.o
-OBJS += $(srcdir)/errors.o
-OBJS += $(srcdir)/loadfiles.o
+OBJS += $(srcdir)/io_utils.o
 OBJS += $(srcdir)/mnemonics.o
 OBJS += $(srcdir)/tokenize.o
 
@@ -33,10 +32,12 @@ $(OBJS): %.o : %.c
 
 # list of test object files to link in test runner executable
 TEST_OBJS =
-TEST_OBJS += $(testsdir)/test_tokenize.o
+TEST_OBJS += $(testsdir)/check_tests.o
+TEST_OBJS += $(testsdir)/test_get_token.o
 TEST_OBJS += $(srcdir)/tokenize.o
 TEST_OBJS += $(srcdir)/mnemonics.o
-TEST_OBJS += $(srcdir)/errors.o
+TEST_OBJS += $(testsdir)/test_read_until_eof.o
+TEST_OBJS += $(srcdir)/io_utils.o
 
 # compiles and runs unit tests
 check: $(TEST_OBJS)

@@ -36,7 +36,7 @@ int get_statements(char srcbuf[], Statement statements[])
             if (*srcp == ':') {
                 // end any open statement
                 if (statementp->name && !statementp->instr) {
-                    printerr("error: '%s' is not a defined mnemonic",
+                    fprintf(stderr, "error: '%s' is not a defined mnemonic",
                         statementp->name);
                     exit(EXIT_FAILURE);
                 }
@@ -63,7 +63,7 @@ int get_statements(char srcbuf[], Statement statements[])
 
                     // instructions don't take names
                     if (statementp->name && !statementp->instr) {
-                        printerr("error: '%s' is not a defined mnemonic",
+                        fprintf(stderr, "error: '%s' is not a defined mnemonic",
                             statementp->name);
                         exit(EXIT_FAILURE);
                     }
@@ -86,7 +86,7 @@ int get_statements(char srcbuf[], Statement statements[])
                 } else if ((pseudoinfo = get_pseudo(mnem)) != NULL) {
                     // check name
                     if (pseudoinfo->reqname && statementp->name == NULL) {
-                        printerr("error: pseudo-instruction %s requires a name",mnem);
+                        fprintf(stderr, "error: pseudo-instruction %s requires a name",mnem);
                         exit(EXIT_FAILURE);
                     }
                     // store pesudo instruction
@@ -94,7 +94,7 @@ int get_statements(char srcbuf[], Statement statements[])
                         statementp->instr = mnem;
                     else {
                         if (statementp->name && !statementp->instr) {
-                            printerr("error: '%s' is not a defined mnemonic",
+                            fprintf(stderr, "error: '%s' is not a defined mnemonic",
                                 statementp->name);
                             exit(EXIT_FAILURE);
                         }
@@ -115,7 +115,7 @@ int get_statements(char srcbuf[], Statement statements[])
                     statementp->name = mnem;
                     statementp->pc = pc;
                 } else {
-                    printerr("error: '%s' is not a defined mnemonic", statementp->name);
+                    fprintf(stderr, "error: '%s' is not a defined mnemonic", statementp->name);
                     exit(EXIT_FAILURE);
                 }
             }
@@ -127,13 +127,13 @@ int get_statements(char srcbuf[], Statement statements[])
                 srcp++;
             continue;
         } else if (*srcp != '\0') {
-            printerr("error: unexpected token %c", *srcp);
+            fprintf(stderr, "error: unexpected token %c", *srcp);
             exit(EXIT_FAILURE);
         }
     }
 
     if (statementp->name && !statementp->instr) {
-        printerr("error: '%s' is not a defined mnemonic",
+        fprintf(stderr, "error: '%s' is not a defined mnemonic",
             statementp->name);
         exit(EXIT_FAILURE);
     }
@@ -154,12 +154,12 @@ int get_arguments(char buf[], char *mnem, int nargs, Args *args)
         bufp += get_argument(bufp, argp);
         if (argp->ntoks == 0) {
             if (nargs <= 2) {
-                printerr("error: %s takes %d argumen%s. %d provided.",
+                fprintf(stderr, "error: %s takes %d argumen%s. %d provided.",
                     mnem, nargs, ((nargs == 1) ? "t" : "ts"), argp-arg_list);
                 exit(EXIT_FAILURE);
             } else {
                 if (nargs == 3 && argp-arg_list == 0) {
-                    printerr("error: %s takes a list of arguments. "
+                    fprintf(stderr, "error: %s takes a list of arguments. "
                         "no arguments provided.", mnem);
                     exit(EXIT_FAILURE);
                 } else {
@@ -191,10 +191,10 @@ int get_arguments(char buf[], char *mnem, int nargs, Args *args)
         if (*bufp != ',') {
             if (nargs <= 2) {
                 if (iswdchr(*bufp))
-                    printerr("error: %s takes %d argumen%s. %d provided.",
+                    fprintf(stderr, "error: %s takes %d argumen%s. %d provided.",
                         mnem, nargs, ((nargs == 1) ? "t" : "ts"), argp-arg_list);
                 else
-                    printerr("error: unexpected token %c", *bufp);
+                    fprintf(stderr, "error: unexpected token %c", *bufp);
                 exit(EXIT_FAILURE);
             } else {
                 argp++;
@@ -243,7 +243,7 @@ int get_argument(char buf[], Arg *arg)
         if (tokp->type == TOK_BINOPER && (arg->ntoks == 0
          || !isoperand((tokp-1)->type) && *(tokp-1)->str != ')')) {
 
-            printerr("error: unexpected operand %s", tokp->str);
+            fprintf(stderr, "error: unexpected operand %s", tokp->str);
             exit(EXIT_FAILURE);
 
         } else if (tokp->type == TOK_LABEL && arg->ntoks > 0
@@ -254,7 +254,7 @@ int get_argument(char buf[], Arg *arg)
          && (isoperand((tokp-1)->type) || (tokp-1)->type == TOK_INSTR
          || *(tokp-1)->str == ')')) {
 
-            printerr("error: unexpected token %s", tokp->str);
+            fprintf(stderr, "error: unexpected token %s", tokp->str);
             exit(EXIT_FAILURE);
 
         } else if (tokp->type == TOK_PAREN) {
@@ -325,18 +325,18 @@ int get_argument(char buf[], Arg *arg)
     }
     // parentheses balance error
     if (nparen > 0) {
-        printerr("error: missing closing )");
+        fprintf(stderr, "error: missing closing )");
         exit(EXIT_FAILURE);
     }
     // else if (nparen < 0) {
-    //     printerr("error: missing opening (");
+    //     fprintf(stderr, "error: missing opening (");
     //     exit(EXIT_FAILURE);
     // }
 
     // if last token is an operator
     if ((toks+arg->ntoks-1)->type == TOK_BINOPER
      || (toks+arg->ntoks-1)->type == TOK_UNAOPER) {
-        printerr("error: expected operand after %s", (toks+arg->ntoks-1)->str);
+        fprintf(stderr, "error: expected operand after %s", (toks+arg->ntoks-1)->str);
         exit(EXIT_FAILURE);
     }
 
@@ -397,7 +397,7 @@ int get_token(char buf[], Token *tok)
                         if (*wordp-'0' < 2)
                             wordp++;
                         else {
-                            printerr("error: binary number %s cannot contain %c",
+                            fprintf(stderr, "error: binary number %s cannot contain %c",
                                 word, *wordp);
                             exit(EXIT_FAILURE);
                         }
@@ -409,7 +409,7 @@ int get_token(char buf[], Token *tok)
                         if (*wordp-'0' < 8)
                             wordp++;
                         else {
-                            printerr("error: octal number %s cannot contain %c",
+                            fprintf(stderr, "error: octal number %s cannot contain %c",
                                 word, *wordp);
                             exit(EXIT_FAILURE);
                         }
@@ -421,7 +421,7 @@ int get_token(char buf[], Token *tok)
                         if (isdigit(*wordp))
                             wordp++;
                         else {
-                            printerr("error: decimal number %s cannot contain %c",
+                            fprintf(stderr, "error: decimal number %s cannot contain %c",
                                 word, *wordp);
                             exit(EXIT_FAILURE);
                         }
@@ -433,7 +433,7 @@ int get_token(char buf[], Token *tok)
                         if (isxdigit(*wordp))
                             wordp++;
                         else {
-                            printerr("error: hexadecimal number %s cannot "
+                            fprintf(stderr, "error: hexadecimal number %s cannot "
                                 "contain %c", word, *wordp);
                             exit(EXIT_FAILURE);
                         }
@@ -441,7 +441,7 @@ int get_token(char buf[], Token *tok)
                     tok->type = TOK_HEX;
                     break;
                 default:
-                    printerr("error: illegal token %s", word);
+                    fprintf(stderr, "error: illegal token %s", word);
                     exit(EXIT_FAILURE);
             }
         } else if (get_instr(word, -1, -1)) // instruction
@@ -473,7 +473,7 @@ int get_token(char buf[], Token *tok)
             if (*bufp == '\'')
                 bufp++;
             else {
-                printerr("error: missing ASCII delimiter");
+                fprintf(stderr, "error: missing ASCII delimiter");
                 exit(EXIT_FAILURE);
             }
             tok->type = TOK_ASCII;
@@ -515,7 +515,7 @@ char *validate_label(char *word, const Statement statements[], int nstmnt)
 
     // validate the label
     if (isdigit(label[0])) {
-        printerr("error: the first character in label '%s' cannot "
+        fprintf(stderr, "error: the first character in label '%s' cannot "
             "be a digit", label);
         exit(EXIT_FAILURE);
     }
@@ -523,20 +523,20 @@ char *validate_label(char *word, const Statement statements[], int nstmnt)
     // TODO: check if label is pseudo-instruction
     // check if label is instruction
     if (get_instr(label, -1, -1)) {
-        printerr("error: %s is a defined mnemonic; cannot be used as a label", label);
+        fprintf(stderr, "error: %s is a defined mnemonic; cannot be used as a label", label);
         exit(EXIT_FAILURE);
     }
 
     // check for duplicate labels
     for (int i = 0; i < nstmnt; i++)
         if (statements[i].label && strcicmp(statements[i].label, label) == 0) {
-            printerr("error: label '%s' is a duplicate", label);
+            fprintf(stderr, "error: label '%s' is a duplicate", label);
             exit(EXIT_FAILURE);
         }
 
     // give warning about short label
     if (strlen(word) > MAX_LABEL)
-        printerr("warning: the label '%s' is too long; "
+        fprintf(stderr, "warning: the label '%s' is too long; "
             "using '%s' instead", word, label);
     return label;
 }

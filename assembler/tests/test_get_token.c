@@ -1,14 +1,8 @@
-// tests for get_token() in tokenize.c
-//
-// Copyright (c) 2020 Moaz Ashraf
-// Licensed under MIT License
-// Refer to LICENSE file
+// Unit tests for get_token() in tokenize.c
 
-#include <stdlib.h>
 #include <check.h>
 #include "../src/asm.h"
 
-char *prog;
 int get_token(char buf[], Token *tok);
 
 START_TEST(test_get_token_dec)
@@ -83,12 +77,12 @@ START_TEST(test_get_token_ascii)
 }
 END_TEST
 
-Suite *tokenize_test_suite(void)
+Suite *get_token_test_suite(void)
 {
     Suite *suite;
     TCase *tc_core;
 
-    suite = suite_create("tokenize");
+    suite = suite_create("get_token");
     tc_core = tcase_create("core");
 
     // add unit tests
@@ -100,21 +94,4 @@ Suite *tokenize_test_suite(void)
     suite_add_tcase(suite, tc_core);
 
     return suite;
-}
-
-int main(void)
-{
-    prog = "check_tests";
-
-    int no_failed = 0;
-    Suite *suite;
-    SRunner *runner;
-
-    suite = tokenize_test_suite();
-    runner = srunner_create(suite);
-
-    srunner_run_all(runner, CK_NORMAL);
-    no_failed = srunner_ntests_failed(runner);
-    srunner_free(runner);
-    return (no_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

@@ -2,8 +2,8 @@
 
 #include "io_utils.h"
 
-#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /**
  * Reads from an file stream until it encounters EOF
@@ -35,8 +35,8 @@ char *read_until_eof(FILE *stream)
         content_size += strlen(line);
         content = realloc(content, content_size);
         if (content == NULL) {
-            perror("error: read_until_eof failed to reallocate content");
             free(old_content);
+            perror("error: read_until_eof failed to reallocate content");
             exit(EXIT_FAILURE);
         }
         strcat(content, line);
@@ -47,6 +47,9 @@ char *read_until_eof(FILE *stream)
         perror("error: read_until_eof failed to read from stream");
         exit(EXIT_FAILURE);
     }
+
+    return content;
 }
+
 
 // TODO: write a function that reads multiple files and concatenates them
